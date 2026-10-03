@@ -42,9 +42,11 @@ function toMessage(r: Record<string, unknown>): OutreachMessage {
 }
 
 export function createOutreachStore(db: SupabaseClient): OutreachSendStore & OutreachEventStore {
+  /** True if inserted, false if the idempotency key already existed. */
   async function ledgerInsert(row: Record<string, unknown>) {
     const { error } = await db.from(T.ledger).insert(row);
     if (error && error.code !== UNIQUE_VIOLATION) throw error;
+    return !error;
   }
 
   // ponytail: client-side sum, paged past PostgREST's 1000-row cap; swap for a
@@ -155,7 +157,7 @@ export function createOutreachStore(db: SupabaseClient): OutreachSendStore & Out
     },
 
     async debit(userId, amount, key, ref) {
-      await ledgerInsert({ user_id: userId, amount: -amount, operation: "outreach_email", idempotency_key: key, ref });
+      return ledgerInsert({ user_id: userId, amount: -amount, operation: "outreach_email", idempotency_key: key, ref });
     },
 
     async refundIfDebited(userId, amount, debitKey, ref) {

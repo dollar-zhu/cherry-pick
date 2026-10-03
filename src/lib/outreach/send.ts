@@ -50,8 +50,8 @@ export interface OutreachSendStore {
   approveBatch(batchId: string, userId: string): Promise<OutreachMessage[] | null>;
   isSuppressed(email: string): Promise<boolean>;
   creditBalance(userId: string): Promise<number>;
-  /** Idempotent per key. */
-  debit(userId: string, amount: number, key: string, ref: string): Promise<void>;
+  /** Idempotent per key. True if this call charged; false if the key was already used. */
+  debit(userId: string, amount: number, key: string, ref: string): Promise<boolean>;
   /** Idempotent per key; does nothing unless `debitKey` was charged. */
   refundIfDebited(userId: string, amount: number, debitKey: string, ref: string): Promise<void>;
   /**
@@ -166,7 +166,14 @@ export async function sendApprovedBatch(input: {
     // Reserve the credits before sending. A concurrent spend that overdraws is
     // undone; the key is then spent, so the message is final (failed), not retryable.
     const key = debitKeyFor(m.id);
-    await store.debit(userId, EMAIL_CREDIT_COST, key, m.id);
+    if (!(await store.debit(userId, EMAIL_CREDIT_COST, key, m.id))) {
+      // Sendable messages are never billed, so an existing key means the row was
+      // edited back to a sendable status after an earlier attempt. Never send it free.
+      await store.markMessage(m.id, { status: "failed", error: "This email was already billed once; create a new draft" });
+      await audit("failed", { reason: "debit_key_already_used" });
+      data.failed++;
+      continue;
+    }
     const after = await store.creditBalance(userId);
     if (after < 0) {
       await store.refundIfDebited(userId, EMAIL_CREDIT_COST, key, m.id);

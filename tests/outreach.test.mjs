@@ -99,8 +99,10 @@ function sendFakes({ messages, suppressed = [], balance = 10, slotsLeft = DAILY_
     isSuppressed: async (email) => suppressed.includes(email),
     creditBalance: async () => sum(),
     debit: async (_u, amount, key) => {
-      if (!ledger.has(key)) ledger.set(key, -amount);
+      const fresh = !ledger.has(key);
+      if (fresh) ledger.set(key, -amount);
       if (spendDuringSend) { balance -= spendDuringSend; spendDuringSend = 0; } // concurrent spend
+      return fresh;
     },
     refundIfDebited: async (_u, amount, key) => {
       if (ledger.has(key) && !ledger.has(`${key}:refund`)) ledger.set(`${key}:refund`, amount);
@@ -116,7 +118,7 @@ function sendFakes({ messages, suppressed = [], balance = 10, slotsLeft = DAILY_
       return { messageId: `am-${idempotencyKey}` };
     },
   };
-  return { store, mailer, marks, sends, audits, ledger, balance: sum };
+  return { store, mailer, marks, sends, audits, ledger, balance: sum, preload: (k, v) => ledger.set(k, v) };
 }
 
 const send = (f) => sendApprovedBatch({ batchId: "b1", userId: "u1", store: f.store, mailer: f.mailer, unsubscribe });
@@ -172,6 +174,17 @@ test("running out of credits stops sending without charging, and is retryable", 
   assert.equal(retry.balance(), 3 - EMAIL_CREDIT_COST);
 });
 
+test("a message edited back to approved after a billed attempt is never sent free", async () => {
+  const f = sendFakes({ messages: [msg("m1")], balance: 5 });
+  f.preload("outreach:m1", -EMAIL_CREDIT_COST); // earlier attempt: charged...
+  f.preload("outreach:m1:refund", EMAIL_CREDIT_COST); // ...then refunded
+  const res = await send(f);
+  assert.equal(res.data.sent, 0);
+  assert.equal(f.sends.length, 0);
+  assert.equal(f.balance(), 5);
+  assert.equal(f.marks.at(-1).status, "failed");
+});
+
 test("a concurrent spend that overdraws is refunded and the email is not sent", async () => {
   const f = sendFakes({ messages: [msg("m1")], balance: EMAIL_CREDIT_COST, spendDuringSend: EMAIL_CREDIT_COST });
   const res = await send(f);
@@ -222,7 +235,7 @@ function eventFakes(message) {
   const store = {
     findByAgentMailId: async (id) => (message && id === "am-1" ? message : null),
     markMessage: async (id, patch) => { calls.marks.push({ id, ...patch }); },
-    debit: async (...args) => { calls.debits.push(args); },
+    debit: async (...args) => { calls.debits.push(args); return true; },
     refundIfDebited: async (...args) => { calls.refunds.push(args); },
     suppress: async (email, reason) => { calls.suppressed.push([email, reason]); },
     audit: async (e) => { calls.audits.push(e); },

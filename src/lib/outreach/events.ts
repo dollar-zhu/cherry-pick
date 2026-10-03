@@ -37,8 +37,8 @@ export type TrackedMessage = {
 export interface OutreachEventStore {
   findByAgentMailId(agentmailMessageId: string): Promise<TrackedMessage | null>;
   markMessage(messageId: string, patch: { status: MessageStatus; agentmailMessageId?: string; error?: string }): Promise<void>;
-  /** Idempotent per key. */
-  debit(userId: string, amount: number, key: string, ref: string): Promise<void>;
+  /** Idempotent per key. True if this call charged; false if the key was already used. */
+  debit(userId: string, amount: number, key: string, ref: string): Promise<boolean>;
   /** Idempotent per key; does nothing unless `debitKey` was charged. */
   refundIfDebited(userId: string, amount: number, debitKey: string, ref: string): Promise<void>;
   suppress(email: string, reason: "unsubscribed" | "bounced" | "complained"): Promise<void>;
