@@ -6,7 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 import { signOut } from "../../login/actions";
 import { RespondForm } from "./respond-form";
 
-const dateFormat = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" });
+// The event's own time zone, not the server's.
+const formatDate = (value: string, timeZone: string) =>
+  new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short", timeZone }).format(new Date(value));
 
 const inboxRow = z.object({
   id: z.string().uuid(),
@@ -17,6 +19,10 @@ const inboxRow = z.object({
   event_city: z.string(),
   event_topic: z.string(),
   event_date_start: z.string(),
+  event_date_end: z.string(),
+  event_timezone: z.string(),
+  event_dates_flexible: z.boolean(),
+  host_name: z.string().nullable(),
 });
 
 export default async function InboxPage() {
@@ -47,7 +53,8 @@ export default async function InboxPage() {
           title: parsed.data.event_title,
           city: parsed.data.event_city,
           topic: parsed.data.event_topic,
-          when: dateFormat.format(new Date(parsed.data.event_date_start)),
+          when: `${parsed.data.event_dates_flexible ? "Flexible, " : ""}${formatDate(parsed.data.event_date_start, parsed.data.event_timezone)} – ${formatDate(parsed.data.event_date_end, parsed.data.event_timezone)}`,
+          host: parsed.data.host_name,
           createdAt: parsed.data.created_at,
         },
       ];
@@ -88,6 +95,7 @@ export default async function InboxPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex flex-col gap-1">
                   <p className="font-medium">{invite.title}</p>
+                  {invite.host && <p className="text-sm text-zinc-500">From {invite.host}</p>}
                   <p className="text-sm text-zinc-500">
                     {invite.city} · {invite.when}
                   </p>

@@ -1,4 +1,4 @@
--- Invites from an event host to a matched company (SUP-10).
+-- Invites from an event host to a matched company (SUP-10). Needs 0005 (events.timezone).
 -- Writes go through send_invites, respond_to_invite, and decide_invite.
 -- Authenticated users can only select. Inbox event fields come from my_invites.
 
@@ -187,7 +187,11 @@ returns table (
   event_title text,
   event_city text,
   event_topic text,
-  event_date_start timestamptz
+  event_date_start timestamptz,
+  event_date_end timestamptz,
+  event_timezone text,
+  event_dates_flexible boolean,
+  host_name text
 )
 language sql
 stable
@@ -201,10 +205,15 @@ as $$
          events.title,
          events.city,
          events.topic,
-         events.date_start
+         events.date_start,
+         events.date_end,
+         events.timezone,
+         events.dates_flexible,
+         host.name
     from public.invites
     join public.events on events.id = invites.event_id
     join public.profiles on profiles.id = invites.profile_id
+    left join public.profiles host on host.user_id = events.owner_id
    where profiles.user_id = (select auth.uid());
 $$;
 
@@ -217,3 +226,9 @@ grant execute on function public.my_invites() to authenticated;
 grant execute on function public.send_invites(uuid, uuid[]) to authenticated;
 grant execute on function public.respond_to_invite(uuid, boolean, text) to authenticated;
 grant execute on function public.decide_invite(uuid, boolean) to authenticated;
+
+-- Local Supabase no longer grants Data API access on new tables. The shared
+-- database already had these privileges from older defaults. Profiles needs
+-- them for the signed-in profile form and the company directory.
+
+grant select, insert, update on public.profiles to authenticated;
