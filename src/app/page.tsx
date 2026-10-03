@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Chat } from "@/components/chat";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./login/actions";
 
@@ -29,7 +28,12 @@ export default async function Home() {
           </form>
         </div>
       </header>
-      <Chat />
+      <Link
+        href="/events/new"
+        className="self-start rounded-full bg-zinc-900 px-4 py-2 text-white dark:bg-zinc-100 dark:text-black"
+      >
+        Plan an event
+      </Link>
     </main>
   );
 }
