@@ -8,7 +8,7 @@ import { MatchesTable, type MatchRow } from "@/components/events/matches-table";
 import { ApprovalQueue, type ApprovalRow } from "@/components/events/approval-queue";
 import { InviteList, type InviteListRow } from "@/components/events/invite-list";
 import { isInviteStatus, type InviteStatus } from "@/components/events/invite-status";
-import { pageTitle } from "@/components/ui";
+import { pageTitle } from "@/components/styles";
 
 export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   const { id } = await params;
@@ -73,7 +73,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
     };
     invites.push(invite);
     inviteStatus[row.profile_id as string] = row.status;
-    if (row.status === "accepted") awaitingDecision.push(invite);
+    if (row.status === "accepted" || row.status === "applied") awaitingDecision.push(invite);
   }
 
   return (
@@ -126,7 +126,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
           <FindMatchesButton eventId={id} />
         </div>
         {candidateError ? (
-          <p role="alert" className="text-sm text-accent">
+          <p role="alert" className="text-sm text-brand">
             Saved matches could not be loaded. Reload the page or click Find matches.
           </p>
         ) : (
@@ -137,7 +137,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       <section className="flex flex-col gap-4">
         <h2 className="font-display text-2xl tracking-[-0.01em]">Invites</h2>
         {inviteError ? (
-          <p role="alert" className="text-sm text-accent">
+          <p role="alert" className="text-sm text-brand">
             Could not load invites.
           </p>
         ) : (
@@ -148,7 +148,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       <section className="flex flex-col gap-4">
         <h2 className="font-display text-2xl tracking-[-0.01em]">Approval queue</h2>
         {inviteError ? (
-          <p role="alert" className="text-sm text-accent">
+          <p role="alert" className="text-sm text-brand">
             Could not load invites.
           </p>
         ) : (

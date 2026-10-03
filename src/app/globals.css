@@ -4,6 +4,8 @@
  * pre-emit critique: P4 H5 E4 S4 R5 V4
  */
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 :root {
   --paper: oklch(98.6% 0.004 80);
@@ -12,8 +14,8 @@
   --ink: oklch(21% 0.012 40);
   --ink-2: oklch(48% 0.012 50);
   --rule: oklch(90.5% 0.006 70);
-  --accent: oklch(53% 0.2 22);
-  --accent-ink: oklch(99% 0.003 80);
+  --brand: oklch(53% 0.2 22);
+  --brand-ink: oklch(99% 0.003 80);
   --focus: oklch(53% 0.2 22);
   --shadow-pop: 0 12px 32px -12px oklch(20% 0.02 40 / 0.25);
 
@@ -31,8 +33,25 @@
   --dur-short: 220ms;
   --dur-long: 420ms;
 
+  /* shadcn/ui names, mapped onto the palette above. Dark mode follows. */
   --background: var(--paper);
   --foreground: var(--ink);
+  --card-foreground: var(--ink);
+  --popover: var(--card);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: var(--paper-2);
+  --secondary-foreground: var(--ink);
+  --muted: var(--paper-2);
+  --muted-foreground: var(--ink-2);
+  --accent: var(--paper-2);
+  --accent-foreground: var(--ink);
+  --destructive: var(--brand);
+  --border: var(--rule);
+  --input: var(--rule);
+  --ring: var(--focus);
+  --radius: 0.75rem;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -43,8 +62,8 @@
     --ink: oklch(95% 0.006 70);
     --ink-2: oklch(72% 0.01 60);
     --rule: oklch(30% 0.01 40);
-    --accent: oklch(66% 0.19 22);
-    --accent-ink: oklch(16% 0.02 22);
+    --brand: oklch(66% 0.19 22);
+    --brand-ink: oklch(16% 0.02 22);
     --focus: oklch(70% 0.17 22);
     --shadow-pop: 0 12px 32px -12px oklch(0% 0 0 / 0.6);
 
@@ -63,12 +82,31 @@
   --color-paper: var(--paper);
   --color-paper-2: var(--paper-2);
   --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
   --color-rule: var(--rule);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
-  --color-accent-ink: var(--accent-ink);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
   --font-sans: var(--font-body);
+  --font-heading: var(--font-display-face);
   --font-display: var(--font-display-face);
   --font-mono: ui-monospace, monospace;
 }
@@ -86,6 +124,9 @@ body {
 
 /* In the base layer, so a utility class can replace it. */
 @layer base {
+  * {
+    @apply border-border;
+  }
   :focus-visible {
     outline: 2px solid var(--focus);
     outline-offset: 2px;

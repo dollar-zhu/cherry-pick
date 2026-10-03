@@ -69,12 +69,12 @@ export function IntentProposal({ intent, toolCallId }: { intent: EventIntent; to
           type="button"
           onClick={confirm}
           disabled={pending}
-          className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-ink transition-[transform,opacity] duration-[var(--dur-micro)] active:scale-[0.98] disabled:opacity-50"
+          className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-ink transition-[transform,opacity] duration-[var(--dur-micro)] active:scale-[0.98] disabled:opacity-50"
         >
           {pending ? "Creating…" : "Confirm intent"}
         </button>
         {error && (
-          <p role="alert" className="text-sm text-accent">
+          <p role="alert" className="text-sm text-brand">
             {error}
           </p>
         )}

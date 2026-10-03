@@ -17,7 +17,10 @@ export async function SiteNav() {
         supabase.rpc("my_invites"),
       ]);
       const waiting = Array.isArray(invites)
-        ? invites.filter((invite: { status: string }) => invite.status === "pending").length
+        ? invites.filter(
+            (invite: { status: string; requested_by?: string }) =>
+              invite.status === "pending" && invite.requested_by !== "partner",
+          ).length
         : 0;
       account = { company: profile?.name ?? null, waiting };
     }
@@ -30,7 +33,7 @@ export async function SiteNav() {
         className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6"
       >
         <Link href="/" aria-label="Cherry Pick home" className="flex items-center gap-2 whitespace-nowrap text-ink">
-          <span aria-hidden className="size-3 rounded-full bg-accent min-[400px]:size-2.5" />
+          <span aria-hidden className="size-3 rounded-full bg-brand min-[400px]:size-2.5" />
           <span className="hidden font-display text-xl tracking-[-0.01em] min-[400px]:inline">Cherry Pick</span>
         </Link>
         {account && (
@@ -63,10 +66,22 @@ export async function SiteNav() {
                 Edit company profile
               </a>
               <a
+                href="/browse"
+                className="block rounded-xl px-3 py-2 transition-colors duration-[var(--dur-micro)] hover:bg-paper-2 sm:hidden"
+              >
+                Browse events
+              </a>
+              <a
                 href="/inbox"
                 className="block rounded-xl px-3 py-2 transition-colors duration-[var(--dur-micro)] hover:bg-paper-2"
               >
                 Inbox
+              </a>
+              <a
+                href="/agents"
+                className="block rounded-xl px-3 py-2 transition-colors duration-[var(--dur-micro)] hover:bg-paper-2"
+              >
+                Connect your agent
               </a>
               <form action={signOut} className="mt-1 border-t border-rule pt-1">
                 <button className="w-full rounded-xl px-3 py-2 text-left text-ink-2 transition-colors duration-[var(--dur-micro)] hover:bg-paper-2 hover:text-ink">

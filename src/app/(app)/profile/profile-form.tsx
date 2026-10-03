@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { buttonPrimary, input } from "@/components/ui";
+import { buttonPrimary, input } from "@/components/styles";
 import { AMENITIES, WEEKDAYS, type Profile } from "@/lib/contracts";
 import { saveProfile } from "./actions";
 
@@ -202,7 +202,7 @@ export function ProfileForm({ initial }: { initial: Partial<Profile> | null }) {
 
       <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-end gap-4 border-t border-rule bg-paper/90 px-4 py-3 backdrop-blur-md sm:mx-0 sm:rounded-full sm:border sm:bg-card/90 sm:py-2 sm:pl-5 sm:pr-2 sm:shadow-[var(--shadow-pop)] sm:[bottom:1rem]">
         {state.error && (
-          <p role="alert" className="min-w-0 flex-1 text-sm text-accent">
+          <p role="alert" className="min-w-0 flex-1 text-sm text-brand">
             {state.error}
           </p>
         )}

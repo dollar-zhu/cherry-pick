@@ -1,21 +1,23 @@
-export const INVITE_STATUSES = ["pending", "accepted", "declined", "approved", "rejected"] as const;
+export const INVITE_STATUSES = ["pending", "accepted", "applied", "declined", "approved", "rejected"] as const;
 
 export type InviteStatus = (typeof INVITE_STATUSES)[number];
 
 const LABELS: Record<InviteStatus, string> = {
   pending: "Pending",
   accepted: "Accepted",
+  applied: "Applied",
   declined: "Declined",
   approved: "Approved",
-  rejected: "Declined by host",
+  rejected: "Rejected",
 };
 
 const STYLES: Record<InviteStatus, string> = {
   pending: "bg-paper-2 text-ink",
   accepted: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
+  applied: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
   declined: "bg-paper-2 text-ink-2",
   approved: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200",
-  rejected: "bg-accent/10 text-accent",
+  rejected: "bg-brand/10 text-brand",
 };
 
 export function isInviteStatus(value: string): value is InviteStatus {

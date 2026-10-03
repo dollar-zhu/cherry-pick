@@ -43,7 +43,7 @@ export function FindMatchesButton({ eventId }: Props) {
           {pending ? "Finding…" : "Find matches"}
         </button>
         {feedback?.kind === "error" && (
-          <p role="alert" className="text-sm text-accent">
+          <p role="alert" className="text-sm text-brand">
             {feedback.message}
           </p>
         )}

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { buttonDark, buttonQuiet, input } from "@/components/ui";
+import { buttonDark, buttonQuiet, input } from "@/components/styles";
 import { respondToInvite } from "@/lib/actions/invites";
 
 export function RespondForm({ inviteId }: { inviteId: string }) {
@@ -55,7 +55,7 @@ export function RespondForm({ inviteId }: { inviteId: string }) {
         </button>
       </div>
       {error && (
-        <p role="alert" className="text-sm text-accent">
+        <p role="alert" className="text-sm text-brand">
           {error}
         </p>
       )}

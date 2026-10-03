@@ -10,7 +10,7 @@ import {
   type TextMessagePartComponent,
 } from "@assistant-ui/react";
 import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
-import { buttonDark, buttonQuiet } from "@/components/ui";
+import { buttonDark, buttonQuiet } from "@/components/styles";
 import { CHAT_MAX_MESSAGE_CHARS } from "@/lib/intent";
 import { IntentCard } from "./intent-card";
 
@@ -38,7 +38,7 @@ function AssistantMessage() {
         }}
       />
       <MessagePrimitive.Error>
-        <ErrorPrimitive.Root role="alert" className="text-sm text-accent">
+        <ErrorPrimitive.Root role="alert" className="text-sm text-brand">
           <ErrorPrimitive.Message />
         </ErrorPrimitive.Root>
       </MessagePrimitive.Error>

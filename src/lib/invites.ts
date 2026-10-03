@@ -7,6 +7,7 @@ const inboxRow = z.object({
   status: z.string(),
   note: z.string().nullable(),
   created_at: z.string(),
+  requested_by: z.enum(["host", "partner"]).default("host"),
   event_title: z.string(),
   event_city: z.string(),
   event_topic: z.string(),
@@ -29,6 +30,8 @@ export type InboxInvite = {
   timezone: string;
   datesFlexible: boolean;
   host: string | null;
+  /** "partner" when your company applied, "host" when the host invited you. */
+  requestedBy: "host" | "partner";
   createdAt: string;
 };
 
@@ -54,6 +57,7 @@ export async function loadInbox(supabase: Awaited<ReturnType<typeof createClient
           timezone: r.event_timezone,
           datesFlexible: r.event_dates_flexible,
           host: r.host_name,
+          requestedBy: r.requested_by,
           createdAt: r.created_at,
         },
       ];

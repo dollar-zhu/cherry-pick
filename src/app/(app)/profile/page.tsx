@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { Monogram } from "@/components/monogram";
-import { pageTitle } from "@/components/ui";
+import { pageTitle } from "@/components/styles";
 import type { Profile } from "@/lib/contracts";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "./profile-form";

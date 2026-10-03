@@ -243,7 +243,7 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
       )}
 
       {error && (
-        <p role="alert" className="text-sm text-accent">
+        <p role="alert" className="text-sm text-brand">
           {error}
         </p>
       )}
@@ -278,7 +278,7 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
                 ` ${demoCount} ${demoCount === 1 ? "is a demo company" : "are demo companies"}: no one will reply.`}
             </p>
             {error && (
-              <p role="alert" className="text-sm text-accent">
+              <p role="alert" className="text-sm text-brand">
                 {error}
               </p>
             )}

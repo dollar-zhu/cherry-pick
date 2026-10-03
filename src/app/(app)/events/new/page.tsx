@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Intake } from "@/components/assistant/intake";
-import { pageTitle } from "@/components/ui";
+import { pageTitle } from "@/components/styles";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "New event · Cherry Pick" };

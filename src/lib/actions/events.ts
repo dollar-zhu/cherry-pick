@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { insertEvent } from "@/lib/events";
 import { intentSchema, isPast } from "@/lib/intent";
 import { createClient } from "@/lib/supabase/server";
 
@@ -32,28 +33,7 @@ export async function createEvent(input: unknown): Promise<CreateEventResult> {
   const userId = auth?.claims.sub;
   if (!userId) return { error: "Sign in to create an event." };
 
-  const { data, error } = await supabase
-    .from("events")
-    .insert({ ...intent, owner_id: userId, source_tool_call_id: toolCallId })
-    .select("id")
-    .single();
-
-  let eventId = data?.id as string | undefined;
-
-  if (error?.code === "23505") {
-    // Already confirmed: reuse the existing event.
-    const existing = await supabase
-      .from("events")
-      .select("id")
-      .eq("owner_id", userId)
-      .eq("source_tool_call_id", toolCallId)
-      .single();
-    eventId = existing.data?.id as string | undefined;
-  } else if (error) {
-    console.error("[createEvent]", error);
-    return { error: "Could not create the event. Please try again." };
-  }
-
-  if (!eventId) return { error: "Could not create the event. Please try again." };
-  redirect(`/events/${eventId}`);
+  const result = await insertEvent(supabase, userId, intent, toolCallId);
+  if ("error" in result) return result;
+  redirect(`/events/${result.id}`);
 }

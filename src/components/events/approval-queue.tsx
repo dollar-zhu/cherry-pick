@@ -15,7 +15,7 @@ export type ApprovalRow = {
 
 export function ApprovalQueue({ rows }: { rows: ApprovalRow[] }) {
   if (rows.length === 0) {
-    return <p className="text-sm text-ink-2">No one has accepted yet</p>;
+    return <p className="text-sm text-ink-2">No applications waiting</p>;
   }
 
   return (
@@ -69,12 +69,12 @@ function DecisionRow({ row }: { row: ApprovalRow }) {
             disabled={pending}
             className="rounded-full border border-rule px-3 py-1 disabled:opacity-50"
           >
-            Decline
+            Reject
           </button>
         </div>
       </div>
       {error && (
-        <p role="alert" className="text-accent">
+        <p role="alert" className="text-brand">
           {error}
         </p>
       )}

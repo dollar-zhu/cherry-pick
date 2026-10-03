@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { CoverPill, EventCard, cardGrid } from "@/components/event-card";
+import { IncomingApplications } from "@/components/events/incoming-applications";
 import { InviteStatusBadge } from "@/components/events/invite-status";
-import { pageTitle } from "@/components/ui";
+import { pageTitle } from "@/components/styles";
+import { listApplications } from "@/lib/cohost";
 import { loadInbox } from "@/lib/invites";
 import { createClient } from "@/lib/supabase/server";
 
@@ -11,49 +12,55 @@ const isPast = (end: string) => new Date(end).getTime() < Date.now();
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
 
 export default async function Home() {
+  // The (app) layout already sends signed-out users and users with no profile away.
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getClaims();
-  if (!auth?.claims) redirect("/login");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("name")
-    .eq("user_id", auth.claims.sub)
-    .maybeSingle();
-  if (!profile) redirect("/profile");
+  const userId = auth?.claims?.sub ?? "";
 
   // RLS returns only the signed-in user's events.
-  const [{ data: events }, inbox] = await Promise.all([
+  const [{ data: profile }, { data: events }, inbox, applications] = await Promise.all([
+    supabase.from("profiles").select("name").eq("user_id", userId).maybeSingle(),
     supabase
       .from("events")
       .select("id, title, topic, city, date_start, date_end, timezone")
       .order("date_start", { ascending: true }),
     loadInbox(supabase),
+    listApplications(supabase, userId),
   ]);
 
   const eventList = events ?? [];
   // Invites that need an answer come first.
   const invites = [...inbox.invites]
-    .sort((a, b) => Number(b.status === "pending") - Number(a.status === "pending"))
+    .sort((a, b) => Number(needsReply(b)) - Number(needsReply(a)))
     .slice(0, 4);
-  const waiting = inbox.invites.filter((invite) => invite.status === "pending").length;
+  const needsReply = (invite: (typeof inbox.invites)[number]) =>
+    invite.status === "pending" && invite.requestedBy === "host";
+  const waiting = inbox.invites.filter(needsReply).length;
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-16 px-4 pb-24 pt-12 sm:px-6">
       <header className="reveal flex flex-col gap-2">
-        <h1 className={`${pageTitle} [overflow-wrap:anywhere]`}>{profile.name}</h1>
+        <h1 className={`${pageTitle} [overflow-wrap:anywhere]`}>{profile?.name ?? "Your company"}</h1>
         <p className="text-ink-2">
           {plural(eventList.length, "event")} planned
           {waiting > 0 && (
             <>
               {" · "}
-              <Link href="/inbox" className="whitespace-nowrap font-medium text-accent underline-offset-4 hover:underline">
+              <Link href="/inbox" className="whitespace-nowrap font-medium text-brand underline-offset-4 hover:underline">
                 {plural(waiting, "invite")} waiting for you
               </Link>
             </>
           )}
         </p>
       </header>
+
+      {"error" in applications ? (
+        <p role="alert" className="text-sm text-brand">
+          Could not load applications.
+        </p>
+      ) : (
+        <IncomingApplications rows={applications.applications} />
+      )}
 
       <section aria-labelledby="events-heading" className="flex flex-col gap-6">
         <h2 id="events-heading" className="font-display text-2xl tracking-[-0.01em]">
@@ -104,7 +111,7 @@ export default async function Home() {
           )}
         </div>
         {inbox.error ? (
-          <p role="alert" className="text-sm text-accent">
+          <p role="alert" className="text-sm text-brand">
             Could not load invites.
           </p>
         ) : invites.length === 0 ? (
@@ -124,9 +131,9 @@ export default async function Home() {
                 date={invite.dateStart}
                 timezone={invite.timezone}
                 badge={
-                  invite.status === "pending" ? (
+                  needsReply(invite) ? (
                     <CoverPill>
-                      <span aria-hidden className="mr-1.5 size-1.5 rounded-full bg-accent" />
+                      <span aria-hidden className="mr-1.5 size-1.5 rounded-full bg-brand" />
                       Waiting for you
                     </CoverPill>
                   ) : (
