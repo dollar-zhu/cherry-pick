@@ -2,10 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { buttonDark, buttonQuiet, input } from "@/components/ui";
 import { respondToInvite } from "@/lib/actions/invites";
-
-const input =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-black";
 
 export function RespondForm({ inviteId }: { inviteId: string }) {
   const router = useRouter();
@@ -27,7 +25,7 @@ export function RespondForm({ inviteId }: { inviteId: string }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="flex flex-col gap-1.5 text-sm text-ink-2">
         Note for the host
         <textarea
           value={note}
@@ -35,7 +33,7 @@ export function RespondForm({ inviteId }: { inviteId: string }) {
           maxLength={500}
           rows={2}
           placeholder="Optional"
-          className={input}
+          className={`${input} resize-none text-sm`}
         />
       </label>
       <div className="flex gap-2">
@@ -43,21 +41,21 @@ export function RespondForm({ inviteId }: { inviteId: string }) {
           type="button"
           onClick={() => respond(true)}
           disabled={pending}
-          className="rounded-full bg-zinc-900 px-3 py-1 text-sm text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-black"
+          className={`${buttonDark} flex-1`}
         >
-          Accept
+          {pending ? "Sending…" : "Accept"}
         </button>
         <button
           type="button"
           onClick={() => respond(false)}
           disabled={pending}
-          className="rounded-full border border-zinc-300 px-3 py-1 text-sm disabled:opacity-50 dark:border-zinc-700"
+          className={`${buttonQuiet} flex-1`}
         >
           Decline
         </button>
       </div>
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-accent">
           {error}
         </p>
       )}

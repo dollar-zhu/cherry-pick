@@ -10,17 +10,18 @@ import {
   type TextMessagePartComponent,
 } from "@assistant-ui/react";
 import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
+import { buttonDark, buttonQuiet } from "@/components/ui";
 import { CHAT_MAX_MESSAGE_CHARS } from "@/lib/intent";
 import { IntentCard } from "./intent-card";
 
 const Text: TextMessagePartComponent = ({ text }) => (
-  <p className="whitespace-pre-wrap leading-7">{text}</p>
+  <p className="whitespace-pre-wrap leading-7 text-ink">{text}</p>
 );
 
 function UserMessage() {
   return (
-    <MessagePrimitive.Root className="flex justify-end">
-      <div className="max-w-[80%] rounded-2xl bg-zinc-900 px-4 py-2 text-white dark:bg-zinc-100 dark:text-black">
+    <MessagePrimitive.Root className="reveal flex justify-end">
+      <div className="max-w-[80%] rounded-2xl rounded-br-md bg-ink px-4 py-2 text-paper [&_p]:text-paper">
         <MessagePrimitive.Parts components={{ Text }} />
       </div>
     </MessagePrimitive.Root>
@@ -29,7 +30,7 @@ function UserMessage() {
 
 function AssistantMessage() {
   return (
-    <MessagePrimitive.Root className="flex flex-col gap-2">
+    <MessagePrimitive.Root className="reveal flex flex-col gap-2">
       <MessagePrimitive.Parts
         components={{
           Text,
@@ -37,7 +38,7 @@ function AssistantMessage() {
         }}
       />
       <MessagePrimitive.Error>
-        <ErrorPrimitive.Root role="alert" className="text-sm text-red-600">
+        <ErrorPrimitive.Root role="alert" className="text-sm text-accent">
           <ErrorPrimitive.Message />
         </ErrorPrimitive.Root>
       </MessagePrimitive.Error>
@@ -54,7 +55,7 @@ export function Thread() {
       <ThreadPrimitive.Root className="flex w-full flex-1 flex-col">
         <ThreadPrimitive.Viewport className="flex flex-1 flex-col gap-6 overflow-y-auto">
           <AuiIf condition={(s) => s.thread.isEmpty}>
-            <p className="text-zinc-500">
+            <p className="text-ink-2">
               Describe the event you want to host: what it&apos;s about, where, when, how many
               guests, and your budget.
             </p>
@@ -65,20 +66,20 @@ export function Thread() {
           </ThreadPrimitive.Messages>
 
           <ThreadPrimitive.ViewportFooter className="sticky bottom-0 mt-auto bg-background pb-6 pt-2">
-            <ComposerPrimitive.Root className="flex gap-2">
+            <ComposerPrimitive.Root className="flex items-end gap-2 rounded-3xl border border-rule bg-card p-2 shadow-[var(--shadow-pop)] transition-colors duration-[var(--dur-micro)] focus-within:border-ink-2/50">
               <ComposerPrimitive.Input
                 autoFocus
                 maxLength={CHAT_MAX_MESSAGE_CHARS}
                 placeholder="Plan a dinner for 20 founders in Berlin…"
-                className="flex-1 resize-none rounded-2xl border border-zinc-300 bg-white px-4 py-2 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-black"
+                className="max-h-40 min-w-0 flex-1 resize-none bg-transparent px-3 py-2 text-ink outline-none placeholder:text-ink-2/60 focus-visible:outline-none"
               />
               <AuiIf condition={(s) => !s.thread.isRunning}>
-                <ComposerPrimitive.Send className="rounded-full bg-zinc-900 px-4 py-2 text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-black">
+                <ComposerPrimitive.Send className={buttonDark}>
                   Send
                 </ComposerPrimitive.Send>
               </AuiIf>
               <AuiIf condition={(s) => s.thread.isRunning}>
-                <ComposerPrimitive.Cancel className="rounded-full border border-zinc-300 px-4 py-2 dark:border-zinc-700">
+                <ComposerPrimitive.Cancel className={buttonQuiet}>
                   Stop
                 </ComposerPrimitive.Cancel>
               </AuiIf>

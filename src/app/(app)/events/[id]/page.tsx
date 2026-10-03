@@ -8,6 +8,7 @@ import { MatchesTable, type MatchRow } from "@/components/events/matches-table";
 import { ApprovalQueue, type ApprovalRow } from "@/components/events/approval-queue";
 import { InviteList, type InviteListRow } from "@/components/events/invite-list";
 import { isInviteStatus, type InviteStatus } from "@/components/events/invite-status";
+import { pageTitle } from "@/components/ui";
 
 export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   const { id } = await params;
@@ -76,48 +77,56 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-10 font-sans">
-      <h1 className="text-2xl font-semibold tracking-tight">{event.title}</h1>
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-12 px-4 pb-24 pt-12 sm:px-6">
+      <header className="reveal flex flex-col gap-2">
+        <h1 className={`${pageTitle} [overflow-wrap:anywhere]`}>{event.title}</h1>
+        <p className="text-ink-2">
+          {event.city} · {dateFormat.format(new Date(event.date_start))}
+        </p>
+      </header>
 
-      <dl className="grid grid-cols-[8rem_1fr] gap-2 text-sm">
-        <dt className="text-zinc-500">Topic</dt>
+      <dl
+        className="reveal grid grid-cols-1 gap-x-4 gap-y-1 rounded-3xl border border-rule bg-card p-5 text-sm sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-y-3 sm:p-8 [&>dd]:mb-2 sm:[&>dd]:mb-0"
+        style={{ "--i": 1 } as React.CSSProperties}
+      >
+        <dt className="text-ink-2">Topic</dt>
         <dd>{event.topic}</dd>
-        <dt className="text-zinc-500">Goal</dt>
+        <dt className="text-ink-2">Goal</dt>
         <dd>{event.goal}</dd>
-        <dt className="text-zinc-500">Format</dt>
+        <dt className="text-ink-2">Format</dt>
         <dd>{event.format}</dd>
-        <dt className="text-zinc-500">City</dt>
+        <dt className="text-ink-2">City</dt>
         <dd>{event.city}</dd>
-        <dt className="text-zinc-500">When</dt>
+        <dt className="text-ink-2">When</dt>
         <dd>
           {dateFormat.format(new Date(event.date_start))} –{" "}
           {dateFormat.format(new Date(event.date_end))}
         </dd>
         {event.dates_flexible && (
           <>
-            <dt className="text-zinc-500">Weekdays</dt>
+            <dt className="text-ink-2">Weekdays</dt>
             <dd>{event.allowed_weekdays ? formatWeekdays(event.allowed_weekdays) : "Any"} (flexible dates)</dd>
           </>
         )}
-        <dt className="text-zinc-500">Venue</dt>
+        <dt className="text-ink-2">Venue</dt>
         <dd>
           {event.needs_venue
             ? `A partner provides it${event.required_amenities.length ? `; must have ${event.required_amenities.join(", ")}` : ""}`
             : "Not needed"}
         </dd>
-        <dt className="text-zinc-500">Guests</dt>
+        <dt className="text-ink-2">Guests</dt>
         <dd>{event.guest_count}</dd>
-        <dt className="text-zinc-500">Budget cap</dt>
+        <dt className="text-ink-2">Budget cap</dt>
         <dd>{formatBudget(event.budget_cap_cents, event.currency, "en")}</dd>
       </dl>
 
       <section className="flex flex-col gap-4">
         <div className="flex items-center gap-4">
-          <h2 className="text-lg font-semibold">Co-host matches</h2>
+          <h2 className="font-display text-2xl tracking-[-0.01em]">Co-host matches</h2>
           <FindMatchesButton eventId={id} />
         </div>
         {candidateError ? (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-accent">
             Saved matches could not be loaded. Reload the page or click Find matches.
           </p>
         ) : (
@@ -126,9 +135,9 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">Invites</h2>
+        <h2 className="font-display text-2xl tracking-[-0.01em]">Invites</h2>
         {inviteError ? (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-accent">
             Could not load invites.
           </p>
         ) : (
@@ -137,9 +146,9 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">Approval queue</h2>
+        <h2 className="font-display text-2xl tracking-[-0.01em]">Approval queue</h2>
         {inviteError ? (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-accent">
             Could not load invites.
           </p>
         ) : (

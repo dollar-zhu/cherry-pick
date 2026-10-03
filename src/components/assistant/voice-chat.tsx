@@ -413,7 +413,7 @@ export function VoiceChat() {
     <div className="flex w-full flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto">
         {lines.length === 0 && !draftUser && !draftAssistant && (
-          <p className="text-zinc-500">
+          <p className="text-ink-2">
             Talk through the event: what it&apos;s about, where, when, how many guests, and your
             budget. You&apos;ll confirm the details before anything is created.
           </p>
@@ -431,13 +431,13 @@ export function VoiceChat() {
         <div ref={endRef} />
 
         <div className="sticky bottom-0 mt-auto flex flex-col gap-2 bg-background pb-6 pt-2">
-          <div className="flex min-h-5 flex-col gap-1 text-sm text-zinc-500">
+          <div className="flex min-h-5 flex-col gap-1 text-sm text-ink-2">
             <p role="status">
               {phase === "live" && (
                 <span className="inline-flex items-center gap-2">
                   <span className="relative flex size-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                    <span className="relative inline-flex size-2 rounded-full bg-red-500" />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
+                    <span className="relative inline-flex size-2 rounded-full bg-accent" />
                   </span>
                   Listening
                 </span>
@@ -447,7 +447,7 @@ export function VoiceChat() {
             {notice && <p>{notice}</p>}
           </div>
           {error && (
-            <p role="alert" className="text-sm text-red-600">
+            <p role="alert" className="text-sm text-accent">
               {error}
             </p>
           )}
@@ -455,7 +455,7 @@ export function VoiceChat() {
             <button
               type="button"
               onClick={stop}
-              className="self-start rounded-full border border-zinc-300 px-4 py-2 dark:border-zinc-700"
+              className="self-start rounded-full border border-rule bg-card px-4 py-2 text-sm font-medium transition-transform duration-[var(--dur-micro)] active:scale-[0.98]"
             >
               Stop
             </button>
@@ -463,7 +463,7 @@ export function VoiceChat() {
             <button
               type="button"
               onClick={() => void start()}
-              className="self-start rounded-full bg-zinc-900 px-4 py-2 text-white dark:bg-zinc-100 dark:text-black"
+              className="self-start rounded-full bg-ink px-4 py-2 text-sm font-medium text-paper transition-[transform,opacity] duration-[var(--dur-micro)] active:scale-[0.98]"
             >
               Start voice chat
             </button>
@@ -480,7 +480,7 @@ function Bubble({ role, text, draft }: { role: "user" | "assistant"; text: strin
     return (
       <div className="flex justify-end">
         <p
-          className={`max-w-[80%] whitespace-pre-wrap rounded-2xl bg-zinc-900 px-4 py-2 leading-7 text-white dark:bg-zinc-100 dark:text-black ${className ?? ""}`}
+          className={`max-w-[80%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-ink px-4 py-2 leading-7 text-paper ${className ?? ""}`}
         >
           {text}
         </p>

@@ -1,26 +1,152 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Card Grid (app) · theme: custom "Orchard" · enrichment: none (typographic covers) · nav: N1b · footer: none (app)
+ * paper oklch(98.6% 0.004 80) · accent oklch(53% 0.2 22) cherry · display Newsreader + body Schibsted Grotesk
+ * axes: light / roman-serif / warm · tone: clean, quiet, warm
+ * pre-emit critique: P4 H5 E4 S4 R5 V4
+ */
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: oklch(98.6% 0.004 80);
+  --paper-2: oklch(95.8% 0.006 80);
+  --card: oklch(100% 0 0);
+  --ink: oklch(21% 0.012 40);
+  --ink-2: oklch(48% 0.012 50);
+  --rule: oklch(90.5% 0.006 70);
+  --accent: oklch(53% 0.2 22);
+  --accent-ink: oklch(99% 0.003 80);
+  --focus: oklch(53% 0.2 22);
+  --shadow-pop: 0 12px 32px -12px oklch(20% 0.02 40 / 0.25);
+
+  /* Event card covers. Picked per event from its title. */
+  --cover-0: oklch(92% 0.045 22);
+  --cover-1: oklch(93% 0.05 70);
+  --cover-2: oklch(93% 0.045 115);
+  --cover-3: oklch(92% 0.04 165);
+  --cover-4: oklch(92% 0.035 235);
+  --cover-5: oklch(92% 0.04 300);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: oklch(17% 0.008 40);
+    --paper-2: oklch(22% 0.009 40);
+    --card: oklch(20% 0.009 40);
+    --ink: oklch(95% 0.006 70);
+    --ink-2: oklch(72% 0.01 60);
+    --rule: oklch(30% 0.01 40);
+    --accent: oklch(66% 0.19 22);
+    --accent-ink: oklch(16% 0.02 22);
+    --focus: oklch(70% 0.17 22);
+    --shadow-pop: 0 12px 32px -12px oklch(0% 0 0 / 0.6);
+
+    --cover-0: oklch(33% 0.06 22);
+    --cover-1: oklch(34% 0.055 70);
+    --cover-2: oklch(34% 0.05 115);
+    --cover-3: oklch(33% 0.045 165);
+    --cover-4: oklch(33% 0.045 235);
+    --cover-5: oklch(33% 0.05 300);
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-rule: var(--rule);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display-face);
+  --font-mono: ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  overflow-x: clip;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body), ui-sans-serif, sans-serif;
+}
+
+/* In the base layer, so a utility class can replace it. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+}
+
+/* One entrance per page. Set --i on each item to stagger it. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.reveal {
+  animation: rise var(--dur-long) var(--ease-out) both;
+  animation-delay: calc(min(var(--i, 0), 8) * 45ms);
+}
+
+/* The company menu in the top bar (popover API). */
+.menu[popover] {
+  position: fixed;
+  inset: auto;
+  top: 4.25rem;
+  right: max(1rem, calc((100vw - 72rem) / 2 + 1.5rem));
+  margin: 0;
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--dur-short) var(--ease-out),
+    transform var(--dur-short) var(--ease-out),
+    display var(--dur-short) allow-discrete,
+    overlay var(--dur-short) allow-discrete;
+}
+
+.menu[popover]:not(:popover-open) {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  transition-timing-function: var(--ease-in);
+  transition-duration: calc(var(--dur-short) * 0.75);
+}
+
+@starting-style {
+  .menu[popover]:popover-open {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+  }
+  .reveal {
+    animation: fade 150ms linear both;
+    animation-delay: 0ms;
+  }
+  .menu[popover],
+  .menu[popover]:not(:popover-open) {
+    transform: none;
+  }
 }

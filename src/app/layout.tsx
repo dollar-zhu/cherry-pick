@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Newsreader, Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 import { SiteNav } from "@/components/site-nav";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Body and UI text.
+const body = Schibsted_Grotesk({
+  variable: "--font-body",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Page titles and the dates on cards only.
+const display = Newsreader({
+  variable: "--font-display-face",
   subsets: ["latin"],
+  axes: ["opsz"],
 });
 
 export const metadata: Metadata = {
@@ -22,7 +25,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${body.variable} ${display.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <SiteNav />

@@ -1,24 +1,24 @@
 "use client";
 
 import { useActionState } from "react";
+import { buttonPrimary, buttonQuiet, input } from "@/components/ui";
 import { authenticate } from "./actions";
-
-const input =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-black";
-const button = "flex-1 rounded-full px-4 py-2 disabled:opacity-50";
 
 export default function LoginPage() {
   const [message, action, pending] = useActionState(authenticate, null);
 
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-6 py-10 font-sans">
-      <h1 className="text-2xl font-semibold tracking-tight">Cherry Pick</h1>
-      <form action={action} className="flex flex-col gap-3">
-        <label className="flex flex-col gap-1 text-sm">
+    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-8 px-4 py-16 sm:px-6">
+      <header className="reveal flex flex-col gap-2">
+        <h1 className="font-display text-5xl tracking-[-0.02em]">Welcome</h1>
+        <p className="text-ink-2">Plan events with partner companies.</p>
+      </header>
+      <form action={action} className="reveal flex flex-col gap-4" style={{ "--i": 1 } as React.CSSProperties}>
+        <label className="flex flex-col gap-1.5 text-sm font-medium">
           Email
           <input name="email" type="email" required autoComplete="email" className={input} />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1.5 text-sm font-medium">
           Password
           <input
             name="password"
@@ -29,13 +29,13 @@ export default function LoginPage() {
             className={input}
           />
         </label>
-        {message && <p role="alert" className="text-sm text-red-600">{message}</p>}
-        <div className="flex gap-2">
+        {message && <p role="alert" className="text-sm text-accent">{message}</p>}
+        <div className="mt-2 flex flex-col gap-2">
           <button
             name="mode"
             value="signin"
             disabled={pending}
-            className={`${button} bg-zinc-900 text-white dark:bg-zinc-100 dark:text-black`}
+            className={`${buttonPrimary} py-2.5`}
           >
             Sign in
           </button>
@@ -43,7 +43,7 @@ export default function LoginPage() {
             name="mode"
             value="signup"
             disabled={pending}
-            className={`${button} border border-zinc-300 dark:border-zinc-700`}
+            className={`${buttonQuiet} py-2.5`}
           >
             Create account
           </button>
