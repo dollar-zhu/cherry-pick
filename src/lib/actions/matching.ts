@@ -29,9 +29,7 @@ export async function findMatches(eventId: string): Promise<FindMatchesResult> {
   // RLS limits this to the signed-in owner.
   const { data: event } = await supabase
     .from("events")
-    .select(
-      "id, title, topic, goal, partner_criteria, city, owner_id, guest_count, date_start, date_end",
-    )
+    .select("id, title, topic, goal, format, partner_criteria, city, owner_id")
     .eq("id", eventId)
     .maybeSingle();
   if (!event) return { status: "error", message: "Event not found." };

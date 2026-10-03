@@ -50,7 +50,7 @@ export function FindMatchesButton({ eventId }: Props) {
       </div>
       {feedback?.kind === "empty" && (
         <p role="status" className="text-sm text-zinc-600 dark:text-zinc-400">
-          No organizations matched these constraints.
+          No organizations in this city.
         </p>
       )}
       {feedback?.kind === "ranking_failed" && (
