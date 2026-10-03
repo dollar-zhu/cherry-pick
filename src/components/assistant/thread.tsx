@@ -64,7 +64,7 @@ export function Thread() {
             {({ message }) => (message.role === "user" ? <UserMessage /> : <AssistantMessage />)}
           </ThreadPrimitive.Messages>
 
-          <ThreadPrimitive.ViewportFooter className="sticky bottom-0 mt-auto bg-background pb-6 pt-2">
+          <ThreadPrimitive.ViewportFooter className="sticky bottom-0 mt-auto bg-background/70 pb-6 pt-2 backdrop-blur-md">
             <ComposerPrimitive.Root className="flex gap-2">
               <ComposerPrimitive.Input
                 autoFocus

@@ -430,7 +430,7 @@ export function VoiceChat() {
         )}
         <div ref={endRef} />
 
-        <div className="sticky bottom-0 mt-auto flex flex-col gap-2 bg-background pb-6 pt-2">
+        <div className="sticky bottom-0 mt-auto flex flex-col gap-2 bg-background/70 pb-6 pt-2 backdrop-blur-md">
           <div className="flex min-h-5 flex-col gap-1 text-sm text-muted-foreground">
             <p role="status">
               {phase === "live" && (

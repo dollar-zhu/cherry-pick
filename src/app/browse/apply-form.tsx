@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { applyToPostedEvent } from "./actions";
 
 const input =
-  "rounded-lg border border-border glass px-3 py-2 outline-none focus:border-ring";
+  "glass-inset rounded-field px-3 py-2 focus:border-ring focus:outline-none";
 
 export function ApplyForm({ eventId }: { eventId: string }) {
   const router = useRouter();

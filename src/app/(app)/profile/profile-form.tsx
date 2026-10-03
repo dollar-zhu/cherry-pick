@@ -5,7 +5,7 @@ import { AMENITIES, WEEKDAYS, type Profile } from "@/lib/contracts";
 import { saveProfile } from "./actions";
 
 const input =
-  "rounded-lg border border-border glass px-3 py-2 outline-none focus:border-ring";
+  "glass-inset rounded-field px-3 py-2 focus:border-ring focus:outline-none";
 const label = "flex flex-col gap-1 text-sm";
 const legend = "mb-1 text-sm font-medium";
 const fieldset = "glass rounded-lg flex flex-col gap-3 p-4";

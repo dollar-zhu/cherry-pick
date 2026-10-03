@@ -74,3 +74,30 @@ test("every pending file still exists and still has raw colors (else remove it f
 test("every page is on the design system (PENDING is empty)", () => {
   assert.equal(PENDING.size, 0, `still pending: ${[...PENDING].join(", ")}`);
 });
+
+test("hand-made text fields use glass-inset, not the panel glass", () => {
+  // The panel `glass` on a field matches the card it sits in and adds a drop shadow.
+  const offenders = [];
+  for (const dir of SCAN) {
+    for (const full of sourceFiles(join(ROOT, dir))) {
+      const path = rel(full);
+      if (EXEMPT.some((e) => path.startsWith(e))) continue;
+      const src = readFileSync(full, "utf8");
+      const fieldClasses = [
+        ...src.matchAll(/const \w*[iI]nput\w* =\s*"([^"]*)"/g),
+        ...src.matchAll(/<(?:input|textarea|select)\b[^>]*className="([^"]*)"/g),
+      ].map((m) => m[1]);
+      for (const cls of fieldClasses) if (/(^|\s)glass(\s|$)/.test(cls)) offenders.push(`${path}: ${cls}`);
+    }
+  }
+  assert.deepEqual(offenders, []);
+});
+
+test("sticky chat footers don't paint an opaque block over the glow", () => {
+  for (const path of ["src/components/assistant/thread.tsx", "src/components/assistant/voice-chat.tsx"]) {
+    const src = readFileSync(join(ROOT, path), "utf8");
+    for (const m of src.matchAll(/className="([^"]*\bsticky bottom-0\b[^"]*)"/g)) {
+      assert.doesNotMatch(m[1], /(^|\s)bg-background(\s|$)/, `${path}: ${m[1]}`);
+    }
+  }
+});
