@@ -12,11 +12,13 @@ modern-minimal, with a warm serif for titles.
 
 ## Tokens
 All tokens live in `src/app/globals.css` (`:root` and the dark block), and Tailwind exposes them through `@theme inline`.
-Use the utilities `bg-paper`, `bg-paper-2`, `bg-card`, `text-ink`, `text-ink-2`, `border-rule`, `bg-accent`, `text-accent-ink`. Do not use `zinc-*`, raw hex, or raw OKLCH in components.
+Use the utilities `bg-paper`, `bg-paper-2`, `bg-card`, `text-ink`, `text-ink-2`, `border-rule`, `bg-brand`, `text-brand-ink`. Do not use `zinc-*`, raw hex, or raw OKLCH in components.
 
-- paper `oklch(98.6% 0.004 80)`, ink `oklch(21% 0.012 40)`, accent (cherry) `oklch(53% 0.2 22)`.
-- The accent is for the main action, waiting counts, and errors only.
-- Event covers use `--cover-0` to `--cover-5`. The title picks one.
+The shadcn/ui names (`--primary`, `--muted`, `--accent`, `--border`, `--ring`, and others) point at this palette in `globals.css`, so components in `src/components/ui/` match. Note: shadcn's `accent` is the light hover colour. The cherry colour is `brand`.
+
+- paper `oklch(98.6% 0.004 80)`, ink `oklch(21% 0.012 40)`, brand (cherry) `oklch(53% 0.2 22)`.
+- The brand colour is for the main action, waiting counts, and errors only.
+- Event covers use `--cover-0` to `--cover-5`. The card's position in the grid picks one.
 
 ## Typography
 - Body and UI: Schibsted Grotesk (`font-sans`).
@@ -25,7 +27,7 @@ Use the utilities `bg-paper`, `bg-paper-2`, `bg-card`, `text-ink`, `text-ink-2`,
 - Do not use Geist, Inter, or system fonts.
 
 ## Components
-- Shared class strings: `src/components/ui.ts` (`buttonPrimary`, `buttonDark`, `buttonQuiet`, `input`, `pageTitle`).
+- Shared class strings: `src/components/styles.ts` (`buttonPrimary`, `buttonDark`, `buttonQuiet`, `input`, `pageTitle`).
 - Cards: `src/components/event-card.tsx` (`EventCard`, `EventCover`, `CoverPill`, `cardGrid`).
 - Company mark: `src/components/monogram.tsx`.
 
