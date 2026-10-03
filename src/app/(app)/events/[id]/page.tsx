@@ -4,6 +4,9 @@ import { formatBudget } from "@/lib/intent";
 import { createClient } from "@/lib/supabase/server";
 import { FindMatchesButton } from "./find-matches-button";
 import { MatchesTable, type MatchRow } from "@/components/events/matches-table";
+import { ApprovalQueue, type ApprovalRow } from "@/components/events/approval-queue";
+import { InviteList, type InviteListRow } from "@/components/events/invite-list";
+import { isInviteStatus } from "@/components/events/invite-status";
 
 const dateFormat = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" });
 
@@ -40,6 +43,30 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
     };
   });
 
+  const { data: inviteRows, error: inviteError } = await supabase
+    .from("invites")
+    .select("id, profile_id, status, note, profiles(name)")
+    .eq("event_id", id)
+    .order("created_at", { ascending: false });
+  if (inviteError) console.error("[event invites]", inviteError);
+
+  const invites: InviteListRow[] = [];
+  const awaitingDecision: ApprovalRow[] = [];
+  const invitedProfileIds: string[] = [];
+  for (const row of inviteRows ?? []) {
+    if (!isInviteStatus(row.status)) continue;
+    const profile = row.profiles as unknown as { name: string } | null;
+    const invite: InviteListRow = {
+      id: row.id as string,
+      profileName: profile?.name ?? "Unknown",
+      status: row.status,
+      note: (row.note as string | null) ?? null,
+    };
+    invites.push(invite);
+    invitedProfileIds.push(row.profile_id as string);
+    if (row.status === "accepted") awaitingDecision.push(invite);
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-10 font-sans">
       <h1 className="text-2xl font-semibold tracking-tight">{event.title}</h1>
@@ -69,7 +96,33 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
           <h2 className="text-lg font-semibold">Co-host matches</h2>
           <FindMatchesButton eventId={id} />
         </div>
-        <MatchesTable rows={candidates} />
+        <MatchesTable
+          rows={candidates}
+          eventId={id}
+          invitedProfileIds={invitedProfileIds}
+        />
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold">Invites</h2>
+        {inviteError ? (
+          <p role="alert" className="text-sm text-red-600">
+            Could not load invites.
+          </p>
+        ) : (
+          <InviteList rows={invites} />
+        )}
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold">Approval queue</h2>
+        {inviteError ? (
+          <p role="alert" className="text-sm text-red-600">
+            Could not load invites.
+          </p>
+        ) : (
+          <ApprovalQueue rows={awaitingDecision} />
+        )}
       </section>
     </main>
   );
