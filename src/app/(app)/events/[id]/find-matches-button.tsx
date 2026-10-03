@@ -38,18 +38,18 @@ export function FindMatchesButton({ eventId }: Props) {
           type="button"
           onClick={run}
           disabled={pending}
-          className="rounded-full bg-zinc-900 px-4 py-1.5 text-sm text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-black"
+          className="rounded-full bg-ink px-4 py-1.5 text-sm text-paper disabled:opacity-50"
         >
           {pending ? "Finding…" : "Find matches"}
         </button>
         {feedback?.kind === "error" && (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-brand">
             {feedback.message}
           </p>
         )}
       </div>
       {feedback?.kind === "empty" && (
-        <p role="status" className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p role="status" className="text-sm text-ink-2">
           No organizations matched these constraints.
         </p>
       )}

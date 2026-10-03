@@ -13,8 +13,8 @@ const formatDate = (value: string, timeZone: string) =>
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[8rem_1fr] gap-2 text-sm">
-      <dt className="text-zinc-500">{label}</dt>
+    <div className="grid grid-cols-1 gap-0.5 border-t border-rule pt-2 text-sm sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-2">
+      <dt className="text-ink-2">{label}</dt>
       <dd className="whitespace-pre-wrap">{children}</dd>
     </div>
   );
@@ -60,21 +60,21 @@ export function IntentProposal({ intent, toolCallId }: { intent: EventIntent; to
   return (
     <section
       aria-label="Proposed event"
-      className="my-2 flex flex-col gap-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800"
+      className="reveal my-2 flex flex-col gap-5 rounded-3xl border border-rule bg-card p-5 shadow-[var(--shadow-pop)] sm:p-6"
     >
-      <h2 className="text-base font-semibold">{intent.title}</h2>
+      <h2 className="font-display text-2xl tracking-[-0.01em]">{intent.title}</h2>
       <Details intent={intent} />
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={confirm}
           disabled={pending}
-          className="rounded-full bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-black"
+          className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-ink transition-[transform,opacity] duration-[var(--dur-micro)] active:scale-[0.98] disabled:opacity-50"
         >
           {pending ? "Creating…" : "Confirm intent"}
         </button>
         {error && (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-brand">
             {error}
           </p>
         )}
@@ -85,7 +85,7 @@ export function IntentProposal({ intent, toolCallId }: { intent: EventIntent; to
 
 export const IntentCard: ToolCallMessagePartComponent = ({ args, status, isError, toolCallId }) => {
   if (status.type === "running") {
-    return <p className="text-sm text-zinc-500">Drafting the event…</p>;
+    return <p className="text-sm text-ink-2">Drafting the event…</p>;
   }
 
   const parsed = intentSchema.safeParse(args);

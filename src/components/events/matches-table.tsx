@@ -30,7 +30,7 @@ export function DemoBadge() {
   return (
     <span
       title="Fictional demo company. No one will reply to an invite."
-      className="rounded-full border border-zinc-300 px-1.5 text-xs font-normal text-zinc-500 dark:border-zinc-700"
+      className="rounded-full border border-rule px-1.5 text-xs font-normal text-ink-2"
     >
       Demo
     </span>
@@ -97,7 +97,7 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
 
   if (rows.length === 0) {
     return (
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-ink-2">
         No matching organizations yet.{" "}
         <Link href="/events/new" className="underline underline-offset-2">
           Refine your intent
@@ -120,7 +120,7 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
               checked={allSelected}
               disabled={selectable.length === 0}
               onChange={toggleAll}
-              className="size-4 accent-zinc-900 dark:accent-zinc-100"
+              className="size-4 accent-[var(--ink)]"
             />
             {selectable.length === 0
               ? "Everyone here is invited"
@@ -129,12 +129,12 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
                 : `Select all ${selectable.length}`}
           </label>
           {selected.size > 0 && (
-            <span className="text-zinc-500">
+            <span className="text-ink-2">
               {selected.size} of {selectable.length} selected ·{" "}
               <button
                 type="button"
                 onClick={() => setSelected(new Set())}
-                className="underline-offset-2 hover:text-zinc-900 hover:underline dark:hover:text-zinc-100"
+                className="underline-offset-2 hover:text-ink hover:underline"
               >
                 Clear
               </button>
@@ -143,10 +143,10 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+      <div className="overflow-x-auto rounded-xl border border-rule">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-zinc-200 text-left text-zinc-500 dark:border-zinc-800">
+            <tr className="border-b border-rule text-left text-ink-2">
               {canInvite && <th className="w-10 px-4 py-3"><span className="sr-only">Select</span></th>}
               <th className="px-4 py-3 font-medium">Organization</th>
               <th className="px-4 py-3 font-medium">Fit</th>
@@ -162,9 +162,9 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
                 <tr
                   key={row.id}
                   onClick={clickable ? () => toggle(row.profileId) : undefined}
-                  className={`border-b border-zinc-100 align-top last:border-0 dark:border-zinc-800/60 ${
-                    clickable ? "cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/60" : ""
-                  } ${isSelected ? "bg-zinc-50 dark:bg-zinc-900" : ""} ${status ? "text-zinc-500" : ""}`}
+                  className={`border-b border-rule align-top last:border-0 ${
+                    clickable ? "cursor-pointer hover:bg-paper-2" : ""
+                  } ${isSelected ? "bg-paper-2" : ""} ${status ? "text-ink-2" : ""}`}
                 >
                   {canInvite && (
                     <td className="px-4 py-3">
@@ -175,7 +175,7 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
                           onChange={() => toggle(row.profileId)}
                           onClick={(event) => event.stopPropagation()}
                           aria-label={`Select ${row.profileName}`}
-                          className="size-4 accent-zinc-900 dark:accent-zinc-100"
+                          className="size-4 accent-[var(--ink)]"
                         />
                       )}
                     </td>
@@ -185,7 +185,7 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
                       {row.profileName}
                       {row.isDemo && <DemoBadge />}
                     </div>
-                    <div className="text-xs text-zinc-500">{row.profileCity}</div>
+                    <div className="text-xs text-ink-2">{row.profileCity}</div>
                     {status && (
                       <div className="mt-1">
                         <InviteStatusBadge status={status} />
@@ -196,10 +196,10 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
                     {row.score != null ? (
                       <span className="font-mono">{row.score.toFixed(1)}</span>
                     ) : (
-                      <span className="text-zinc-400">—</span>
+                      <span className="text-ink-2">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                  <td className="px-4 py-3 text-ink-2">
                     {row.reasons.length > 0 ? (
                       <ul className="list-inside list-disc space-y-0.5">
                         {row.reasons.map((reason, index) => (
@@ -207,7 +207,7 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
                         ))}
                       </ul>
                     ) : (
-                      <span className="text-zinc-400">Not ranked</span>
+                      <span className="text-ink-2">Not ranked</span>
                     )}
                     {row.openQuestions.length > 0 && (
                       <ul className="mt-1 list-inside list-disc space-y-0.5 text-amber-700 dark:text-amber-400">
@@ -226,7 +226,7 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
 
       {canInvite && selected.size > 0 && (
         // Floating bar so Send stays in reach while scrolling a long list.
-        <div className="sticky bottom-4 z-10 mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-full border border-zinc-200 bg-white/95 py-2 pr-2 pl-5 text-sm shadow-lg backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
+        <div className="sticky bottom-4 z-10 mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-full border border-rule bg-card/95 py-2 pr-2 pl-5 text-sm shadow-lg backdrop-blur">
           <span>{selected.size} selected</span>
           <button
             type="button"
@@ -235,7 +235,7 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
               setError(null);
               dialogRef.current?.showModal();
             }}
-            className="rounded-full bg-zinc-900 px-4 py-1.5 text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-black"
+            className="rounded-full bg-ink px-4 py-1.5 text-paper disabled:opacity-50"
           >
             Send {invites(selected.size)}
           </button>
@@ -243,7 +243,7 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
       )}
 
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-brand">
           {error}
         </p>
       )}
@@ -252,7 +252,7 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
         <dialog
           ref={dialogRef}
           aria-labelledby="send-invites-title"
-          className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-zinc-200 bg-white p-6 text-zinc-900 backdrop:bg-black/40 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+          className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-rule bg-card p-6 text-ink backdrop:bg-black/40"
         >
           <form
             className="flex flex-col gap-4"
@@ -272,13 +272,13 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
                 </li>
               ))}
             </ul>
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-ink-2">
               Each company sees the invite in its inbox and can accept or decline.
               {demoCount > 0 &&
                 ` ${demoCount} ${demoCount === 1 ? "is a demo company" : "are demo companies"}: no one will reply.`}
             </p>
             {error && (
-              <p role="alert" className="text-sm text-red-600">
+              <p role="alert" className="text-sm text-brand">
                 {error}
               </p>
             )}
@@ -286,14 +286,14 @@ export function MatchesTable({ rows, eventId, inviteStatus = {} }: Props) {
               <button
                 type="button"
                 onClick={() => dialogRef.current?.close()}
-                className="rounded-full border border-zinc-300 px-4 py-1.5 text-sm dark:border-zinc-700"
+                className="rounded-full border border-rule px-4 py-1.5 text-sm"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={pending || selectedRows.length === 0}
-                className="rounded-full bg-zinc-900 px-4 py-1.5 text-sm text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-black"
+                className="rounded-full bg-ink px-4 py-1.5 text-sm text-paper disabled:opacity-50"
               >
                 {pending ? "Sending…" : `Send ${invites(selectedRows.length)}`}
               </button>

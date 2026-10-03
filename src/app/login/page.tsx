@@ -12,17 +12,12 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   if (user) redirect(nextPath ?? (await getPostAuthPath(user.id)));
 
   return (
-    <main className="flex min-h-svh flex-1 items-center justify-center bg-muted/40 px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="mb-6 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Cherry Pick
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight">Find your next co-host</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Sign in or create an account to get started.
-          </p>
-        </div>
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-8 px-4 py-16 sm:px-6">
+      <header className="reveal flex flex-col gap-2">
+        <h1 className="font-display text-5xl tracking-[-0.02em] text-balance">Find your next co‑host</h1>
+        <p className="text-ink-2">Sign in or create an account to get started.</p>
+      </header>
+      <div className="reveal" style={{ "--i": 1 } as React.CSSProperties}>
         <LoginForm nextPath={nextPath ?? undefined} />
       </div>
     </main>

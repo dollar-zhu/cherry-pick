@@ -5,13 +5,12 @@ import { useRouter } from "next/navigation";
 import { generateFlier, type FlierRequest } from "@/lib/actions/flier";
 import { VIBES, getVibe, type VibeId } from "@/lib/flier/design";
 import type { FlierView } from "@/lib/flier/store";
+import { buttonDark, buttonPrimary, buttonQuiet, input } from "@/components/styles";
 
 type Props = { eventId: string; initial: FlierView | null; loadError: boolean };
 
-const button =
-  "rounded-full bg-zinc-900 px-4 py-1.5 text-sm text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-black";
-const secondary =
-  "rounded-full border border-zinc-300 px-4 py-1.5 text-sm disabled:opacity-50 dark:border-zinc-700";
+const chip =
+  "cursor-pointer select-none whitespace-nowrap rounded-full border border-rule px-3.5 py-1.5 text-sm text-ink transition-[background-color,color,transform] duration-[var(--dur-micro)] hover:border-ink-2/50 active:scale-[0.97] has-checked:border-ink has-checked:bg-ink has-checked:text-paper has-disabled:pointer-events-none has-disabled:opacity-50 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-[var(--focus)]";
 
 export function FlierPanel({ eventId, initial, loadError }: Props) {
   const router = useRouter();
@@ -42,101 +41,113 @@ export function FlierPanel({ eventId, initial, loadError }: Props) {
     });
   }
 
+  const vibes = [{ id: "", label: "Match the format" }, ...VIBES];
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-zinc-500">Vibe</span>
-          <select
-            value={vibe}
-            onChange={(e) => setVibe(e.target.value)}
-            disabled={pending}
-            className="rounded-md border border-zinc-300 bg-transparent px-2 py-1 dark:border-zinc-700"
-          >
-            <option value="">Match the format</option>
-            {VIBES.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => run({ mode: "new", vibe: (vibe || undefined) as VibeId | undefined })}
-          className={button}
-        >
-          {running === "new" ? "Generating…" : flier ? "New flier" : "Generate flier"}
-        </button>
-      </div>
-
-      {pending && (
-        <p role="status" className="text-sm text-zinc-600 dark:text-zinc-400">
-          {running === "restyle" ? "Setting new fonts…" : "Painting the background — this takes 10–20 seconds."}
-        </p>
-      )}
-      {error && (
-        <p role="alert" className="text-sm text-red-600">
-          {error}
-        </p>
-      )}
-
-      {flier ? (
-        <div className="flex flex-col gap-3">
-          {/* eslint-disable-next-line @next/next/no-img-element -- signed Storage URL, already sized */}
+    <div className="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
+      {/* Preview: the flier, or a placeholder in the same 4:5 shape. */}
+      <div className="relative">
+        {flier ? (
+          // eslint-disable-next-line @next/next/no-img-element -- signed Storage URL, already sized
           <img
             src={flier.imageUrl}
             alt="Event flier"
             width={1080}
             height={1350}
-            className={`aspect-[4/5] w-full max-w-sm rounded-lg border border-zinc-200 dark:border-zinc-800 ${pending ? "opacity-60" : ""}`}
+            className={`aspect-[4/5] w-full rounded-2xl border border-rule object-cover shadow-[var(--shadow-pop)] transition-opacity duration-[var(--dur-short)] ${pending ? "opacity-50" : ""}`}
           />
-          <p className="text-xs text-zinc-500">
-            Version {flier.version} · {getVibe(flier.vibe).label} · {flier.fontSet} type
-            {flier.instruction ? ` · “${flier.instruction}”` : ""}
-          </p>
-          {flier.fellBack && (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
-              Image generation was unavailable, so this version uses a plain background. Try New flier again.
-            </p>
-          )}
-          <form
-            className="flex max-w-sm gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (instruction.trim().length >= 2) run({ mode: "refine", instruction });
-            }}
-          >
-            <input
-              value={instruction}
-              onChange={(e) => setInstruction(e.target.value)}
-              maxLength={300}
-              disabled={pending}
-              placeholder="Refine the background, e.g. darker, more minimal"
-              aria-label="Refine the background"
-              className="min-w-0 flex-1 rounded-md border border-zinc-300 bg-transparent px-3 py-1.5 text-sm dark:border-zinc-700"
-            />
-            <button type="submit" disabled={pending || instruction.trim().length < 2} className={button}>
-              {running === "refine" ? "Refining…" : "Refine"}
-            </button>
-          </form>
-          <div className="flex gap-2">
-            <button type="button" disabled={pending} onClick={() => run({ mode: "restyle" })} className={secondary}>
-              {running === "restyle" ? "Setting…" : "New fonts"}
-            </button>
-            <a href={flier.downloadUrl} className={secondary}>
-              Download PNG
-            </a>
+        ) : (
+          <div className="flex aspect-[4/5] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-ink-2/40 bg-paper-2 p-6 text-center">
+            <p className="font-display text-2xl text-ink">No flier yet</p>
+            <p className="text-sm text-ink-2">It uses the title, date, city and co-hosts. Never the budget.</p>
           </div>
-        </div>
-      ) : (
-        !pending && (
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            No flier yet. It uses the event title, date, city and co-hosts — never the budget.
+        )}
+        {pending && (
+          <div className="absolute inset-0 flex items-end justify-center p-4">
+            <span role="status" className="rounded-full bg-card/90 px-3 py-1.5 text-xs font-medium text-ink shadow-sm backdrop-blur">
+              {running === "restyle" ? "Setting new fonts…" : "Painting the background, 10–20 seconds…"}
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="flex min-w-0 flex-col gap-6">
+        <fieldset className="flex flex-col gap-3" disabled={pending}>
+          <legend className="mb-3 text-sm font-medium text-ink">Vibe</legend>
+          <div className="flex flex-wrap gap-2">
+            {vibes.map((v) => (
+              <label key={v.id || "auto"} className={chip}>
+                <input
+                  type="radio"
+                  name="flier-vibe"
+                  value={v.id}
+                  checked={vibe === v.id}
+                  onChange={() => setVibe(v.id)}
+                  className="sr-only"
+                />
+                {v.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => run({ mode: "new", vibe: (vibe || undefined) as VibeId | undefined })}
+          className={`${buttonPrimary} self-start`}
+        >
+          {running === "new" ? "Generating…" : flier ? "Generate a new flier" : "Generate flier"}
+        </button>
+
+        {error && (
+          <p role="alert" className="text-sm text-brand">
+            {error}
           </p>
-        )
-      )}
+        )}
+
+        {flier && (
+          <div className="flex flex-col gap-4 border-t border-rule pt-6">
+            <p className="text-sm text-ink-2">
+              Version {flier.version} · {getVibe(flier.vibe).label} · {flier.fontSet} type
+              {flier.instruction ? ` · “${flier.instruction}”` : ""}
+            </p>
+            {flier.fellBack && (
+              <p className="rounded-xl bg-paper-2 px-3 py-2 text-sm text-ink">
+                Image generation was unavailable, so this version uses a plain background. Generate it again.
+              </p>
+            )}
+            <form
+              className="flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (instruction.trim().length >= 2) run({ mode: "refine", instruction });
+              }}
+            >
+              <input
+                value={instruction}
+                onChange={(e) => setInstruction(e.target.value)}
+                maxLength={300}
+                disabled={pending}
+                placeholder="Refine the background, e.g. darker, more minimal"
+                aria-label="Refine the background"
+                className={`${input} min-w-0 flex-1 text-sm`}
+              />
+              <button type="submit" disabled={pending || instruction.trim().length < 2} className={buttonDark}>
+                {running === "refine" ? "Refining…" : "Refine"}
+              </button>
+            </form>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" disabled={pending} onClick={() => run({ mode: "restyle" })} className={buttonQuiet}>
+                {running === "restyle" ? "Setting…" : "New fonts"}
+              </button>
+              <a href={flier.downloadUrl} className={buttonQuiet}>
+                Download PNG
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

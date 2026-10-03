@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { formatBudget } from "@/lib/intent";
@@ -8,6 +9,8 @@ import { MatchesTable, type MatchRow } from "@/components/events/matches-table";
 import { ApprovalQueue, type ApprovalRow } from "@/components/events/approval-queue";
 import { InviteList, type InviteListRow } from "@/components/events/invite-list";
 import { isInviteStatus, type InviteStatus } from "@/components/events/invite-status";
+import { pageTitle } from "@/components/styles";
+import { contactEmail } from "@/lib/invites";
 import { FlierPanel } from "@/components/events/flier-panel";
 import { flierFileName, loadLatestFlier } from "@/lib/flier/store";
 
@@ -67,10 +70,10 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
     p_event_id: id,
   });
   if (contactError) console.error("[event contacts]", contactError);
-  const contactEmail = new Map(
+  const emailByInvite = new Map(
     (Array.isArray(contactRows) ? contactRows : []).map((row: { invite_id: string; email: string | null }) => [
       row.invite_id,
-      row.email,
+      contactEmail(row.email),
     ]),
   );
 
@@ -86,7 +89,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       isDemo: profile?.is_demo ?? false,
       status: row.status,
       note: (row.note as string | null) ?? null,
-      email: contactEmail.get(row.id as string) ?? null,
+      email: emailByInvite.get(row.id as string) ?? null,
     };
     invites.push(invite);
     inviteStatus[row.profile_id as string] = row.status;
@@ -96,48 +99,59 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   const latestFlier = await loadLatestFlier(supabase, id, flierFileName(event.title));
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-10 font-sans">
-      <h1 className="text-2xl font-semibold tracking-tight">{event.title}</h1>
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-12 px-4 pb-24 pt-12 sm:px-6">
+      <header className="reveal flex flex-col gap-2">
+        <Link href="/" className="mb-2 self-start text-sm text-ink-2 underline-offset-4 hover:text-ink hover:underline">
+          ← Your events
+        </Link>
+        <h1 className={`${pageTitle} [overflow-wrap:anywhere]`}>{event.title}</h1>
+        <p className="text-ink-2">
+          {event.city} · {dateFormat.format(new Date(event.date_start))}
+        </p>
+      </header>
 
-      <dl className="grid grid-cols-[8rem_1fr] gap-2 text-sm">
-        <dt className="text-zinc-500">Topic</dt>
+      <dl
+        className="reveal grid grid-cols-1 gap-x-4 gap-y-1 rounded-3xl border border-rule bg-card p-5 text-sm sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-y-3 sm:p-8 [&>dd]:mb-2 sm:[&>dd]:mb-0"
+        style={{ "--i": 1 } as React.CSSProperties}
+      >
+        <dt className="text-ink-2">Topic</dt>
         <dd>{event.topic}</dd>
-        <dt className="text-zinc-500">Goal</dt>
+        <dt className="text-ink-2">Goal</dt>
         <dd>{event.goal}</dd>
-        <dt className="text-zinc-500">Format</dt>
+        <dt className="text-ink-2">Format</dt>
         <dd>{event.format}</dd>
-        <dt className="text-zinc-500">City</dt>
+        <dt className="text-ink-2">City</dt>
         <dd>{event.city}</dd>
-        <dt className="text-zinc-500">When</dt>
+        <dt className="text-ink-2">When</dt>
         <dd>
           {dateFormat.format(new Date(event.date_start))} –{" "}
           {dateFormat.format(new Date(event.date_end))}
         </dd>
         {event.dates_flexible && (
           <>
-            <dt className="text-zinc-500">Weekdays</dt>
+            <dt className="text-ink-2">Weekdays</dt>
             <dd>{event.allowed_weekdays ? formatWeekdays(event.allowed_weekdays) : "Any"} (flexible dates)</dd>
           </>
         )}
-        <dt className="text-zinc-500">Venue</dt>
+        <dt className="text-ink-2">Venue</dt>
         <dd>
           {event.needs_venue
             ? `A partner provides it${event.required_amenities.length ? `; must have ${event.required_amenities.join(", ")}` : ""}`
             : "Not needed"}
         </dd>
-        <dt className="text-zinc-500">Guests</dt>
+        <dt className="text-ink-2">Guests</dt>
         <dd>{event.guest_count}</dd>
-        <dt className="text-zinc-500">Budget cap</dt>
+        <dt className="text-ink-2">Budget cap</dt>
         <dd>{formatBudget(event.budget_cap_cents, event.currency, "en")}</dd>
       </dl>
 
       <section className="flex flex-col gap-4">
         <div className="flex items-center gap-4">
-          <h2 className="text-lg font-semibold">Co-host matches</h2>
+          <h2 className="font-display text-2xl tracking-[-0.01em]">Co-host matches</h2>
           <FindMatchesButton eventId={id} />
         </div>
         {candidateError ? (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-brand">
             Saved matches could not be loaded. Reload the page or click Find matches.
           </p>
         ) : (
@@ -146,9 +160,9 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">Invites</h2>
+        <h2 className="font-display text-2xl tracking-[-0.01em]">Invites</h2>
         {inviteError ? (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-brand">
             Could not load invites.
           </p>
         ) : (
@@ -157,9 +171,9 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">Approval queue</h2>
+        <h2 className="font-display text-2xl tracking-[-0.01em]">Approval queue</h2>
         {inviteError ? (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-brand">
             Could not load invites.
           </p>
         ) : (
@@ -167,8 +181,11 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         )}
       </section>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">Flier</h2>
+      <section className="flex flex-col gap-6">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-display text-2xl tracking-[-0.01em]">Flier</h2>
+          <p className="text-sm text-ink-2">A shareable poster for the event. Generate it, then refine the background or the fonts.</p>
+        </div>
         <FlierPanel eventId={id} initial={latestFlier.flier} loadError={latestFlier.error} />
       </section>
     </main>

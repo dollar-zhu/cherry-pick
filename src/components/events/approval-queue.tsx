@@ -15,11 +15,11 @@ export type ApprovalRow = {
 
 export function ApprovalQueue({ rows }: { rows: ApprovalRow[] }) {
   if (rows.length === 0) {
-    return <p className="text-sm text-zinc-500">No applications waiting</p>;
+    return <p className="text-sm text-ink-2">No applications waiting</p>;
   }
 
   return (
-    <ul className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 dark:divide-zinc-800/60 dark:border-zinc-800">
+    <ul className="divide-y divide-rule rounded-xl border border-rule">
       {rows.map((row) => (
         <li key={row.id}>
           <DecisionRow row={row} />
@@ -51,7 +51,7 @@ function DecisionRow({ row }: { row: ApprovalRow }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
           <span className="font-medium">{row.profileName}</span>
-          {row.note && <p className="text-zinc-600 dark:text-zinc-400">{row.note}</p>}
+          {row.note && <p className="text-ink-2">{row.note}</p>}
         </div>
         <div className="flex items-center gap-2">
           <InviteStatusBadge status={row.status} />
@@ -59,7 +59,7 @@ function DecisionRow({ row }: { row: ApprovalRow }) {
             type="button"
             onClick={() => decide(true)}
             disabled={pending}
-            className="rounded-full bg-zinc-900 px-3 py-1 text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-black"
+            className="rounded-full bg-ink px-3 py-1 text-paper disabled:opacity-50"
           >
             Approve
           </button>
@@ -67,14 +67,14 @@ function DecisionRow({ row }: { row: ApprovalRow }) {
             type="button"
             onClick={() => decide(false)}
             disabled={pending}
-            className="rounded-full border border-zinc-300 px-3 py-1 disabled:opacity-50 dark:border-zinc-700"
+            className="rounded-full border border-rule px-3 py-1 disabled:opacity-50"
           >
             Reject
           </button>
         </div>
       </div>
       {error && (
-        <p role="alert" className="text-red-600">
+        <p role="alert" className="text-brand">
           {error}
         </p>
       )}
