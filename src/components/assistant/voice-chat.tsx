@@ -248,6 +248,10 @@ export function VoiceChat() {
 
       const { GoogleGenAI, Modality } = await import("@google/genai");
       const buffers = { user: "", assistant: "" };
+      // Gemini call ids (e.g. "call_834691") repeat across sessions. createEvent dedupes on
+      // (owner, tool call id), so a repeat would reopen an old event instead of creating this one.
+      const sessionId = crypto.randomUUID();
+      const proposalId = (callId: string) => `voice:${sessionId}:${callId}`;
 
       function flush(role: "user" | "assistant") {
         const text = buffers[role].trim();
@@ -285,7 +289,11 @@ export function VoiceChat() {
           const field = issue?.path.join(".") || "details";
           session.sendToolResponse({
             functionResponses: [
-              { id: call.id, name, response: { error: `Invalid ${field}. Ask the user to correct it.` } },
+              {
+                id: call.id,
+                name,
+                response: { error: `Invalid ${field}: ${issue?.message ?? "check the value"}. Ask the user to correct it.` },
+              },
             ],
           });
           return;
@@ -305,7 +313,7 @@ export function VoiceChat() {
           });
           return;
         }
-        setProposal({ intent: parsed.data, toolCallId: call.id || crypto.randomUUID() });
+        setProposal({ intent: parsed.data, toolCallId: proposalId(call.id || crypto.randomUUID()) });
         session.sendToolResponse({
           functionResponses: [
             { id: call.id, name, response: { status: "awaiting_user_confirmation" } },
@@ -333,7 +341,7 @@ export function VoiceChat() {
         const cancelled = message.toolCallCancellation?.ids;
         if (cancelled?.length) {
           setProposal((current) =>
-            current && cancelled.includes(current.toolCallId) ? null : current,
+            current && cancelled.some((id) => proposalId(id) === current.toolCallId) ? null : current,
           );
         }
         if (message.goAway) setNotice("This voice session is ending soon.");
@@ -416,7 +424,10 @@ export function VoiceChat() {
         ))}
         {draftUser && <Bubble role="user" text={draftUser} draft />}
         {draftAssistant && <Bubble role="assistant" text={draftAssistant} draft />}
-        {proposal && <IntentProposal intent={proposal.intent} toolCallId={proposal.toolCallId} />}
+        {proposal && (
+          // key: a new proposal must not keep the old card's error or pending state.
+          <IntentProposal key={proposal.toolCallId} intent={proposal.intent} toolCallId={proposal.toolCallId} />
+        )}
         <div ref={endRef} />
 
         <div className="sticky bottom-0 mt-auto flex flex-col gap-2 bg-background pb-6 pt-2">
