@@ -7,6 +7,8 @@ export type InviteListRow = {
   isDemo: boolean;
   status: InviteStatus;
   note: string | null;
+  /** Set only for approved co-hosts with a sign-in account. */
+  email?: string | null;
 };
 
 export function InviteList({ rows }: { rows: InviteListRow[] }) {
@@ -26,6 +28,11 @@ export function InviteList({ rows }: { rows: InviteListRow[] }) {
             <InviteStatusBadge status={row.status} />
           </div>
           {row.note && <p className="text-ink-2">{row.note}</p>}
+          {row.email && (
+            <a href={`mailto:${row.email}`} className="self-start text-ink underline decoration-ink/30 underline-offset-4 hover:decoration-ink">
+              {row.email}
+            </a>
+          )}
         </li>
       ))}
     </ul>

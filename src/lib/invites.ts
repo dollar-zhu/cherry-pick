@@ -17,6 +17,8 @@ const inboxRow = z.object({
   event_timezone: z.string(),
   event_dates_flexible: z.boolean(),
   host_name: z.string().nullable(),
+  // Only set once the host approves (0010_cohost_contacts.sql).
+  host_email: z.string().nullable().default(null),
 });
 
 export type InboxInvite = {
@@ -31,10 +33,16 @@ export type InboxInvite = {
   timezone: string;
   datesFlexible: boolean;
   host: string | null;
+  /** Set only after the host approves. */
+  hostEmail: string | null;
   /** "partner" when your company applied, "host" when the host invited you. */
   requestedBy: "host" | "partner";
   createdAt: string;
 };
+
+/** Demo logins from supabase/seed.sql use the reserved .invalid domain. They cannot receive mail. */
+export const contactEmail = (email: string | null | undefined) =>
+  email && !email.endsWith(".invalid") ? email : null;
 
 /** An invite from a host that this company has not answered yet. */
 export const needsReply = (invite: InboxInvite) => invite.status === "pending" && invite.requestedBy === "host";
@@ -65,6 +73,7 @@ export const loadInbox = cache(async () => {
           timezone: r.event_timezone,
           datesFlexible: r.event_dates_flexible,
           host: r.host_name,
+          hostEmail: contactEmail(r.host_email),
           requestedBy: r.requested_by,
           createdAt: r.created_at,
         },

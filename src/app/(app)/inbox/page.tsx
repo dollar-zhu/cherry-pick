@@ -74,6 +74,22 @@ export default async function InboxPage() {
               {invite.note && (
                 <p className="rounded-xl bg-paper-2 px-3 py-2 text-sm text-ink-2">Your note: {invite.note}</p>
               )}
+              {invite.status === "approved" && (
+                <p className="rounded-xl bg-paper-2 px-3 py-2 text-sm text-ink">
+                  You are a confirmed co-host.{" "}
+                  {invite.hostEmail ? (
+                    <>
+                      Contact the host at{" "}
+                      <a href={`mailto:${invite.hostEmail}`} className="font-medium underline underline-offset-4">
+                        {invite.hostEmail}
+                      </a>
+                      .
+                    </>
+                  ) : (
+                    <span className="text-ink-2">The host has no contact email on file.</span>
+                  )}
+                </p>
+              )}
               {invite.status === "applied" && (
                 <p className="text-sm text-ink-2">Waiting on the host.</p>
               )}
