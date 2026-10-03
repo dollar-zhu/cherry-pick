@@ -5,6 +5,7 @@ Next.js 16 app with an [eve](https://eve.dev) agent that runs on the Vercel AI G
 | Integration | Where |
 | --- | --- |
 | Event-intent chat (assistant-ui + AI SDK) | `src/app/(app)/events/new`, `src/app/api/chat`, `src/components/assistant/`, `src/lib/intent.ts` |
+| Co-host partner search (Exa, credit-gated) | `src/lib/partners/`, `agent/tools/search_cohost_partners.ts` |
 | `events` table + RLS | `supabase/migrations/` |
 | Supabase auth | `src/lib/supabase/`, `src/proxy.ts`, `agent/channels/eve.ts` |
 | eve agent (AI SDK + AI Gateway) | `agent/`, mounted at `/eve/v1/*` by `withEve` in `next.config.ts` |
