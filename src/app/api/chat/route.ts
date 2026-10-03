@@ -33,11 +33,11 @@ function instructions() {
 
 Today is ${new Date().toISOString().slice(0, 10)}.
 
-Collect these fields: title, topic, goal, format, city, date_start, date_end, guest_count, budget_cap_cents, sales_boundary, partner_criteria.
+Collect these fields: title, topic, goal, format, city, date_start, date_end, guest_count, budget_cap_cents, currency, sales_boundary, partner_criteria.
 - Ask for at most two missing fields at a time, in plain conversational text (no markdown).
 - Never invent values the user has not given or clearly implied. You may suggest a title.
 - Dates must be in the future, as ISO 8601 date-times with a UTC offset matching the event's city.
-- budget_cap_cents is the budget in cents (3,000 means 300000).
+- budget_cap_cents is the budget in minor units (3,000 means 300000); currency is its ISO 4217 code (EUR, USD). Confirm the currency if the user only gave a symbol or a city.
 - Once every field is known, call propose_event_intent. If it returns a validation error, ask the user for the field that failed.
 - After proposing, tell the user to review the card and press Confirm. Never say the event has been created.`;
 }

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { z } from "zod";
+import { formatBudget } from "@/lib/intent";
 import { createClient } from "@/lib/supabase/server";
 
 const dateFormat = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" });
@@ -13,7 +14,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   const supabase = await createClient();
   const { data: event } = await supabase
     .from("events")
-    .select("title, topic, goal, format, city, date_start, date_end, guest_count, budget_cap_cents")
+    .select("title, topic, goal, format, city, date_start, date_end, guest_count, budget_cap_cents, currency")
     .eq("id", id)
     .maybeSingle();
   if (!event) notFound();
@@ -37,7 +38,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         <dt className="text-zinc-500">Guests</dt>
         <dd>{event.guest_count}</dd>
         <dt className="text-zinc-500">Budget cap</dt>
-        <dd>{(event.budget_cap_cents / 100).toFixed(2)}</dd>
+        <dd>{formatBudget(event.budget_cap_cents, event.currency, "en")}</dd>
       </dl>
     </main>
   );

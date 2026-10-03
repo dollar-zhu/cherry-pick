@@ -16,6 +16,7 @@ create table public.events (
   date_end timestamptz not null,
   guest_count integer not null check (guest_count between 1 and 10000),
   budget_cap_cents bigint not null check (budget_cap_cents between 0 and 10000000000),
+  currency text not null check (currency ~ '^[A-Z]{3}$'),
   sales_boundary text not null check (char_length(sales_boundary) between 2 and 500),
   partner_criteria text not null check (char_length(partner_criteria) between 2 and 1000),
   created_at timestamptz not null default now(),

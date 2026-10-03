@@ -3,15 +3,10 @@
 import type { ToolCallMessagePartComponent } from "@assistant-ui/react";
 import { useState, useTransition } from "react";
 import { createEvent } from "@/lib/actions/events";
-import { intentSchema, type EventIntent } from "@/lib/intent";
+import { formatBudget, intentSchema, type EventIntent } from "@/lib/intent";
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 
-// The intent schema carries no currency; amounts are shown without a symbol.
-const amountFormat = new Intl.NumberFormat(undefined, {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -33,7 +28,7 @@ function Details({ intent }: { intent: EventIntent }) {
         {dateFormat.format(new Date(intent.date_start))} – {dateFormat.format(new Date(intent.date_end))}
       </Row>
       <Row label="Guests">{intent.guest_count}</Row>
-      <Row label="Budget cap">{amountFormat.format(intent.budget_cap_cents / 100)}</Row>
+      <Row label="Budget cap">{formatBudget(intent.budget_cap_cents, intent.currency)}</Row>
       <Row label="Sales boundary">{intent.sales_boundary}</Row>
       <Row label="Partner criteria">{intent.partner_criteria}</Row>
     </dl>

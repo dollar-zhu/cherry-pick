@@ -34,7 +34,11 @@ export const intentSchema = z
       .int()
       .min(0)
       .max(10_000_000_000)
-      .describe("Maximum total budget in cents, e.g. 300000 for 3,000.00"),
+      .describe("Maximum total budget in minor units of `currency`, e.g. 300000 for 3,000.00"),
+    currency: z
+      .string()
+      .regex(/^[A-Z]{3}$/, "Use an uppercase ISO 4217 code")
+      .describe("ISO 4217 currency code of the budget, e.g. EUR or USD"),
     sales_boundary: text(2, 500).describe(
       "What selling or pitching is and is not allowed at the event",
     ),
@@ -48,6 +52,10 @@ export const intentSchema = z
   });
 
 export type EventIntent = z.infer<typeof intentSchema>;
+
+export function formatBudget(cents: number, currency: string, locale?: string) {
+  return new Intl.NumberFormat(locale, { style: "currency", currency }).format(cents / 100);
+}
 
 /** Chat request limits, enforced by /api/chat and mirrored in the composer. */
 export const CHAT_MAX_MESSAGES = 30;
