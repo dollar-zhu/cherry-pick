@@ -132,10 +132,6 @@ export function formatWeekdays(days: number[] | null): string {
   return [...days].sort((a, b) => a - b).map((day) => DAY[day] ?? String(day)).join(", ");
 }
 
-/**
- * Orders candidates by how many of their topics appear in the event text.
- * ponytail: word match only; rank the full set with the model if pools outgrow MATCH_LIMIT.
- */
 export type CohostCompany = {
   id: string;
   name: string;
@@ -160,6 +156,10 @@ export function rankCohosts(topics: string[], companies: CohostCompany[], limit 
     .slice(0, limit);
 }
 
+/**
+ * Orders candidates by how many of their topics appear in the event text.
+ * ponytail: word match only; rank the full set with the model if pools outgrow MATCH_LIMIT.
+ */
 export function topicOverlap(topics: string[], eventText: string): number {
   return topics.filter((topic) => {
     const word = topic.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

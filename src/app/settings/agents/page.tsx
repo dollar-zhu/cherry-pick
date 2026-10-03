@@ -30,6 +30,12 @@ export default async function AgentTokensPage() {
         </p>
       </div>
 
+      {!process.env.SUPABASE_SECRET_KEY && (
+        <p role="alert" className="text-sm text-red-600">
+          SUPABASE_SECRET_KEY is not set on the server, so personal tokens will not sign in yet.
+        </p>
+      )}
+
       <IssueTokenForm />
 
       <section className="flex flex-col gap-2">

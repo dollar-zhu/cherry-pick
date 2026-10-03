@@ -1,5 +1,8 @@
 export function siteUrl() {
-  const raw = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  // On Vercel, fall back to the production domain so MCP links never say localhost.
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  const raw =
+    process.env.NEXT_PUBLIC_SITE_URL || (vercel ? `https://${vercel}` : "http://localhost:3000");
   return raw.replace(/\/$/, "");
 }
 

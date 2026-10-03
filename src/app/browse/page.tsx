@@ -4,6 +4,8 @@ import { listPostedEvents } from "@/lib/cohost";
 import { createClient } from "@/lib/supabase/server";
 import { ApplyForm } from "./apply-form";
 
+export const dynamic = "force-dynamic";
+
 const formatDate = (value: string, timeZone: string) =>
   new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short", timeZone }).format(new Date(value));
 

@@ -30,15 +30,32 @@ export default async function AgentsPage() {
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">Connect your agent</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Claude Code, Claude Desktop, or Cursor sign in as you. The agent asks for your company and
+          Claude Code, Claude Desktop, Cursor, or Poke sign in as you. The agent asks for your company and
           the events you care about, then you can create an event or browse events other companies posted and apply to co-host. Hosts approve or reject those applications.
-          Sending, confirming, and publishing stop at an approval link you open in the browser.
+          The agent never decides an application for you, and it does not email anyone.
         </p>
       </div>
 
       <CopyBlock label="Endpoint" value={endpoint} />
       <CopyBlock label="Claude Code" value={claudeCode} />
       <CopyBlock label="Claude Desktop" value={claudeDesktop} />
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm font-medium">Poke</h2>
+        <ol className="list-decimal space-y-1 pl-5 text-sm text-zinc-600 dark:text-zinc-400">
+          <li>
+            <Link href="/settings/agents" className="underline">
+              Create a personal token
+            </Link>{" "}
+            and copy it.
+          </li>
+          <li>
+            In Poke, open Settings, then Integrations, then New integration. Name it Cherry Pick.
+          </li>
+          <li>Paste the endpoint above as the MCP server URL.</li>
+          <li>Paste the token as the API key.</li>
+        </ol>
+      </section>
 
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-medium">Tools</h2>
