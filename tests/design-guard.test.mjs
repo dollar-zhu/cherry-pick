@@ -37,8 +37,6 @@ const PENDING = new Set([
   "src/components/events/invite-list.tsx",
   "src/components/events/invite-status.tsx",
   "src/components/events/matches-table.tsx",
-  "src/components/nav-links.tsx",
-  "src/components/site-nav.tsx",
 ]);
 
 const PALETTE =

@@ -149,7 +149,9 @@ test("page content sits above the glow and below the sticky top bar (z-10)", () 
   assert.ok(block, "@utility above-glow missing");
   const contentZ = Number(block[1].match(/z-index:\s*(-?\d+)/)[1]);
   assert.ok(contentZ > glowZ && contentZ < 10, `content z ${contentZ} must be above glow ${glowZ} and below 10`);
+  // The root layout owns the glow and the content layer for every page.
+  assert.match(layout, /<RouteGlow \/>/);
+  assert.match(layout, /className="above-glow\b/);
   const design = readFileSync(new URL("../src/app/design/page.tsx", import.meta.url), "utf8");
-  assert.match(design, /\babove-glow\b/);
-  assert.doesNotMatch(design, /\bz-10\b/);
+  assert.doesNotMatch(design, /\bz-10\b|<Glow\b/);
 });

@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EmptyState } from "@/components/brand/empty-state";
-import { Glow } from "@/components/brand/glow";
 import { Logo } from "@/components/brand/logo";
 import { Orb } from "@/components/brand/orb";
 import { ORB_STATES } from "@/components/brand/orb-state";
@@ -40,9 +39,7 @@ export default function DesignPage() {
   if (process.env.NODE_ENV === "production") notFound();
 
   return (
-    <>
-      <Glow intensity="app" />
-      <main className="above-glow mx-auto grid w-full max-w-5xl gap-12 px-6 py-10">
+      <main className="mx-auto grid w-full max-w-5xl gap-12 px-6 py-10">
         <PageHeader
           title="Design system"
           description="Every token and component in one place. Dev only."
@@ -141,6 +138,5 @@ export default function DesignPage() {
           />
         </Section>
       </main>
-    </>
   );
 }
