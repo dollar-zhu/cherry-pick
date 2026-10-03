@@ -4,7 +4,7 @@ import { z } from "zod";
  * The structured "event intent" the assistant proposes and the user confirms.
  * Shared by the `propose_event_intent` tool (input schema), the IntentCard
  * (client-side check before enabling Confirm) and `createEvent` (re-validation
- * before insert). Keep in sync with `supabase/migrations/*_events.sql`.
+ * before insert). Keep in sync with `supabase/migrations/0003_events.sql`.
  */
 
 const text = (min: number, max: number) => z.string().trim().min(min).max(max);
