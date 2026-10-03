@@ -72,7 +72,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
     };
     invites.push(invite);
     inviteStatus[row.profile_id as string] = row.status;
-    if (row.status === "accepted") awaitingDecision.push(invite);
+    if (row.status === "accepted" || row.status === "applied") awaitingDecision.push(invite);
   }
 
   return (

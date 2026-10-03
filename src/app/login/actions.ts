@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { getPostAuthPath, isSupabaseConfigured } from "@/lib/auth";
+import { safeNext } from "@/lib/redirect";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthActionState = { message: string | null; kind: "error" | "success" | null };
@@ -48,6 +49,9 @@ export async function authenticate(
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { message: "Email or password is incorrect.", kind: "error" };
   }
+
+  const nextPath = safeNext(formData.get("next"));
+  if (nextPath) redirect(nextPath);
 
   const { data: auth, error: claimsError } = await supabase.auth.getClaims();
   const userId = auth?.claims?.sub;
