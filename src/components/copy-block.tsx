@@ -17,12 +17,12 @@ export function CopyBlock({ label, value }: { label: string; value: string }) {
               setTimeout(() => setCopied(false), 2000);
             });
           }}
-          className="rounded-full border border-zinc-300 px-3 py-1 text-xs dark:border-zinc-700"
+          className="rounded-full border border-rule px-3 py-1 text-xs"
         >
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <pre className="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs leading-relaxed dark:border-zinc-800 dark:bg-zinc-950">
+      <pre className="overflow-x-auto rounded-2xl border border-rule bg-paper-2 p-3 text-xs leading-relaxed">
         {value}
       </pre>
     </section>

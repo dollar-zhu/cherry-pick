@@ -1,11 +1,5 @@
 import Link from "next/link";
 
-// Same title, same cover color, on every visit.
-function coverIndex(seed: string) {
-  let hash = 0;
-  for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) | 0;
-  return Math.abs(hash) % 6;
-}
 
 // Dates show in the event's own time zone, not the server's.
 function dateParts(value: string, timeZone: string) {
@@ -21,12 +15,13 @@ function dateParts(value: string, timeZone: string) {
 
 /** The "photo" of an event card: a tinted block with the date set large. */
 export function EventCover({
-  seed,
+  tone,
   date,
   timezone,
   badge,
 }: {
-  seed: string;
+  /** Position in the grid. Neighbours get different colours. */
+  tone: number;
   date: string;
   timezone: string;
   badge?: React.ReactNode;
@@ -34,7 +29,7 @@ export function EventCover({
   const { day, month, weekday } = dateParts(date, timezone);
   return (
     <div
-      style={{ "--cover": `var(--cover-${coverIndex(seed)})` } as React.CSSProperties}
+      style={{ "--cover": `var(--cover-${tone % 6})` } as React.CSSProperties}
       className="relative flex aspect-[3/2] flex-col min-[480px]:aspect-[4/3] justify-end overflow-hidden rounded-2xl bg-[var(--cover)] p-5 text-ink"
     >
       {badge && <div className="absolute left-3 top-3">{badge}</div>}
@@ -82,7 +77,7 @@ export function EventCard({
         href={href}
         className="group block rounded-2xl transition-transform duration-[var(--dur-micro)] ease-[var(--ease-out)] active:scale-[0.99]"
       >
-        <EventCover seed={title} date={date} timezone={timezone} badge={badge} />
+        <EventCover tone={index} date={date} timezone={timezone} badge={badge} />
         <div className="mt-3 flex flex-col gap-0.5 px-0.5">
           <h3 className="truncate font-medium text-ink decoration-ink/30 underline-offset-4 group-hover:underline">
             {title}

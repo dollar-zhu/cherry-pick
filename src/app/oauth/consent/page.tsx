@@ -9,8 +9,8 @@ export default async function ConsentPage({ searchParams }: PageProps<"/oauth/co
   if (!authorizationId) {
     return (
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-6 py-10 font-sans">
-        <h1 className="text-2xl font-semibold tracking-tight">Missing authorization</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">Start the connection from your agent again.</p>
+        <h1 className="font-display text-4xl tracking-[-0.02em] text-ink sm:text-5xl">Missing authorization</h1>
+        <p className="text-sm text-ink-2">Start the connection from your agent again.</p>
       </main>
     );
   }
@@ -27,8 +27,8 @@ export default async function ConsentPage({ searchParams }: PageProps<"/oauth/co
   if (error || !details) {
     return (
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-6 py-10 font-sans">
-        <h1 className="text-2xl font-semibold tracking-tight">Could not authorize</h1>
-        <p role="alert" className="text-sm text-red-600">
+        <h1 className="font-display text-4xl tracking-[-0.02em] text-ink sm:text-5xl">Could not authorize</h1>
+        <p role="alert" className="text-sm text-brand">
           {error?.message ?? "This authorization request is invalid or expired."}
         </p>
       </main>
@@ -41,24 +41,24 @@ export default async function ConsentPage({ searchParams }: PageProps<"/oauth/co
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-6 py-10 font-sans">
-      <h1 className="text-2xl font-semibold tracking-tight">Authorize {details.client.name}</h1>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <h1 className="font-display text-4xl tracking-[-0.02em] text-ink sm:text-5xl">Authorize {details.client.name}</h1>
+      <p className="text-sm text-ink-2">
         This agent will act as you. It can read your events and draft work. Anything that sends or
         publishes still needs your approval.
       </p>
       {params.error === "1" && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-brand">
           That decision did not go through. Try again.
         </p>
       )}
       <dl className="grid grid-cols-[8rem_1fr] gap-2 text-sm">
-        <dt className="text-zinc-500">Client</dt>
+        <dt className="text-ink-2">Client</dt>
         <dd>{details.client.name}</dd>
-        <dt className="text-zinc-500">Redirect</dt>
+        <dt className="text-ink-2">Redirect</dt>
         <dd className="break-all">{details.redirect_uri}</dd>
         {scopes.length > 0 && (
           <>
-            <dt className="text-zinc-500">Access</dt>
+            <dt className="text-ink-2">Access</dt>
             <dd>{scopes.join(", ")}</dd>
           </>
         )}
@@ -68,14 +68,14 @@ export default async function ConsentPage({ searchParams }: PageProps<"/oauth/co
         <button
           name="decision"
           value="approve"
-          className="rounded-full bg-zinc-900 px-4 py-2 text-sm text-white dark:bg-zinc-100 dark:text-black"
+          className="rounded-full bg-ink px-4 py-2 text-sm text-paper font-medium transition-[transform,opacity] duration-[var(--dur-micro)] active:scale-[0.98]"
         >
           Approve
         </button>
         <button
           name="decision"
           value="deny"
-          className="rounded-full border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700"
+          className="rounded-full border border-rule px-4 py-2 text-sm"
         >
           Deny
         </button>

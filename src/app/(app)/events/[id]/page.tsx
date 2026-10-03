@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { formatBudget } from "@/lib/intent";
@@ -79,6 +80,9 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-12 px-4 pb-24 pt-12 sm:px-6">
       <header className="reveal flex flex-col gap-2">
+        <Link href="/" className="mb-2 self-start text-sm text-ink-2 underline-offset-4 hover:text-ink hover:underline">
+          ← Your events
+        </Link>
         <h1 className={`${pageTitle} [overflow-wrap:anywhere]`}>{event.title}</h1>
         <p className="text-ink-2">
           {event.city} · {dateFormat.format(new Date(event.date_start))}

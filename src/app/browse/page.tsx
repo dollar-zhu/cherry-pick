@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
+import { CoverPill, EventCover, cardGrid } from "@/components/event-card";
 import { InviteStatusBadge, isInviteStatus } from "@/components/events/invite-status";
+import { pageTitle } from "@/components/styles";
 import { listPostedEvents } from "@/lib/cohost";
 import { createClient } from "@/lib/supabase/server";
 import { ApplyForm } from "./apply-form";
@@ -26,49 +28,57 @@ export default async function BrowsePage() {
   const result = await listPostedEvents(supabase);
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-10 font-sans">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Events from other companies</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Apply to co-host. The host approves or rejects the application.
-        </p>
-      </div>
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-4 pb-24 pt-12 sm:px-6">
+      <header className="reveal flex flex-col gap-2">
+        <h1 className={pageTitle}>Browse events</h1>
+        <p className="text-ink-2">Events from other companies. Apply to co-host, and the host approves or rejects.</p>
+      </header>
 
       {"error" in result ? (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-brand">
           {result.error}
         </p>
       ) : result.events.length === 0 ? (
-        <p className="text-sm text-zinc-500">No upcoming events from other companies.</p>
+        <p className="reveal text-ink-2" style={{ "--i": 1 } as React.CSSProperties}>
+          No upcoming events from other companies yet.
+        </p>
       ) : (
-        <ul className="flex flex-col gap-4">
-          {result.events.map((event) => {
+        <ul className={cardGrid}>
+          {result.events.map((event, index) => {
             const status = event.application_status && isInviteStatus(event.application_status)
               ? event.application_status
               : null;
             return (
               <li
                 key={event.id}
-                className="flex flex-col gap-3 rounded-xl border border-zinc-200 px-4 py-4 dark:border-zinc-800"
+                className="reveal flex min-w-0 flex-col gap-3"
+                style={{ "--i": index + 1 } as React.CSSProperties}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex flex-col gap-1">
-                    <p className="font-medium">{event.title}</p>
-                    <p className="text-sm text-zinc-500">
-                      {event.host_name ? `Hosted by ${event.host_name}` : "Hosted by another company"}
-                    </p>
-                    <p className="text-sm text-zinc-500">
-                      {event.city} · {event.dates_flexible ? "Flexible, " : ""}
-                      {formatDate(event.date_start, event.timezone)} – {formatDate(event.date_end, event.timezone)}
-                    </p>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                      {event.topic} · {event.format} · {event.guest_count} guests
-                    </p>
-                  </div>
-                  {status && <InviteStatusBadge status={status} />}
+                <EventCover
+                  tone={index}
+                  date={event.date_start}
+                  timezone={event.timezone}
+                  badge={status ? <InviteStatusBadge status={status} /> : <CoverPill>{event.guest_count} guests</CoverPill>}
+                />
+                <div className="flex flex-col gap-0.5 px-0.5">
+                  <h2 className="font-medium text-ink">{event.title}</h2>
+                  <p className="text-sm text-ink-2">
+                    {event.host_name ? `Hosted by ${event.host_name}` : "Hosted by another company"}
+                  </p>
+                  <p className="text-sm text-ink-2">
+                    {event.city} · {event.dates_flexible ? "Flexible, " : ""}
+                    {formatDate(event.date_start, event.timezone)}
+                  </p>
+                  <p className="mt-1 text-sm text-ink">
+                    {event.topic} · {event.format}
+                  </p>
                 </div>
-                {status ? (
-                  <p className="text-sm text-zinc-500">
+                {status === "pending" ? (
+                  <a href="/inbox" className="text-sm font-medium text-brand underline-offset-4 hover:underline">
+                    The host invited you. Reply in your inbox.
+                  </a>
+                ) : status ? (
+                  <p className="text-sm text-ink-2">
                     {status === "applied" ? "Waiting on the host." : "You already have a request for this event."}
                   </p>
                 ) : (

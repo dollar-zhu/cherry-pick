@@ -51,7 +51,7 @@ export default async function InboxPage() {
               style={{ "--i": index + 1 } as React.CSSProperties}
             >
               <EventCover
-                seed={invite.title}
+                tone={index}
                 date={invite.dateStart}
                 timezone={invite.timezone}
                 badge={

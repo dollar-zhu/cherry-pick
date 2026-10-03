@@ -14,6 +14,13 @@ import { buttonDark, buttonQuiet } from "@/components/styles";
 import { CHAT_MAX_MESSAGE_CHARS } from "@/lib/intent";
 import { IntentCard } from "./intent-card";
 
+// Fill the composer; the host edits before sending.
+const EXAMPLES = [
+  "A dinner for 20 founders in San Francisco next month, budget $3,000",
+  "An AI agents hackathon for 150 developers, and we need a venue",
+  "A breakfast talk on fundraising for 40 people, any weekday",
+];
+
 const Text: TextMessagePartComponent = ({ text }) => (
   <p className="whitespace-pre-wrap leading-7 text-ink">{text}</p>
 );
@@ -55,10 +62,24 @@ export function Thread() {
       <ThreadPrimitive.Root className="flex w-full flex-1 flex-col">
         <ThreadPrimitive.Viewport className="flex flex-1 flex-col gap-6 overflow-y-auto">
           <AuiIf condition={(s) => s.thread.isEmpty}>
-            <p className="text-ink-2">
-              Describe the event you want to host: what it&apos;s about, where, when, how many
-              guests, and your budget.
-            </p>
+            <div className="flex flex-col gap-4">
+              <p className="text-ink-2">
+                Describe the event you want to host: what it&apos;s about, where, when, how many
+                guests, and your budget.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {EXAMPLES.map((prompt) => (
+                  <ThreadPrimitive.Suggestion
+                    key={prompt}
+                    prompt={prompt}
+                    send={false}
+                    className="rounded-full border border-rule bg-card px-3.5 py-1.5 text-left text-sm text-ink transition-[background-color,transform] duration-[var(--dur-micro)] hover:bg-paper-2 active:scale-[0.98]"
+                  >
+                    {prompt}
+                  </ThreadPrimitive.Suggestion>
+                ))}
+              </div>
+            </div>
           </AuiIf>
 
           <ThreadPrimitive.Messages>

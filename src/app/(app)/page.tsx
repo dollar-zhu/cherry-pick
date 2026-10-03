@@ -29,12 +29,12 @@ export default async function Home() {
   ]);
 
   const eventList = events ?? [];
+  const needsReply = (invite: (typeof inbox.invites)[number]) =>
+    invite.status === "pending" && invite.requestedBy === "host";
   // Invites that need an answer come first.
   const invites = [...inbox.invites]
     .sort((a, b) => Number(needsReply(b)) - Number(needsReply(a)))
     .slice(0, 4);
-  const needsReply = (invite: (typeof inbox.invites)[number]) =>
-    invite.status === "pending" && invite.requestedBy === "host";
   const waiting = inbox.invites.filter(needsReply).length;
 
   return (
