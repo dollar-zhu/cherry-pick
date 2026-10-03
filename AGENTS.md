@@ -42,3 +42,15 @@ Do not rename these columns of `profiles` or change what they mean: `city`, `ven
 - The auth flow: sign-up, password reset, OAuth, the confirm-email setting.
 - The look and the steps of the profile form.
 - New optional (nullable) profile columns.
+
+# Cherry Pick UI rules
+
+The design system lives in `src/app/globals.css` (tokens), `src/components/ui/` (shadcn kit) and `src/components/brand/` (Logo, Glow, Orb, PageHeader, EmptyState). Run `npm run dev` and open `/design` to see every piece. Spec: `docs/superpowers/specs/2026-10-03-design-system-design.md`.
+
+- Use tokens only: `bg-primary`, `text-muted-foreground`, `border-border`, `bg-success`, and so on. No `zinc-*`, `red-*` or hex colors in pages. `tests/design-guard.test.mjs` fails on them.
+- White (`<Button>`) is the everyday primary action. `<Button variant="brand">` is only for AI and brand actions (find co-hosts, voice, publish). Red (`variant="destructive"`) only for actions that lose something.
+- Panels and cards use `glass`, inputs use `glass-inset`, menus and dialogs use `glass-raised`.
+- Never put text on `bg-brand-gradient`. Use `bg-brand-gradient-text` for anything with white text.
+- One `<Glow>` per page, behind a `relative z-10` content wrapper. `intensity="app"` for signed-in pages, `"hero"` for login, onboarding and empty states.
+- The voice feature sets `<Orb state>` only. Don't restyle the orb in feature code.
+- Dark only, desktop only.
