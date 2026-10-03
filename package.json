@@ -10,7 +10,10 @@
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
+    "@assistant-ui/react": "^0.15.23",
+    "@assistant-ui/react-ai-sdk": "^1.4.14",
     "@base-ui/react": "^1.8.0",
+    "@google/genai": "^2.27.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
     "agentmail": "^0.5.35",
