@@ -14,7 +14,7 @@ const formatDate = (value: string, timeZone: string) =>
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid grid-cols-[8rem_1fr] gap-2 text-sm">
-      <dt className="text-zinc-500">{label}</dt>
+      <dt className="text-muted-foreground">{label}</dt>
       <dd className="whitespace-pre-wrap">{children}</dd>
     </div>
   );
@@ -60,7 +60,7 @@ export function IntentProposal({ intent, toolCallId }: { intent: EventIntent; to
   return (
     <section
       aria-label="Proposed event"
-      className="my-2 flex flex-col gap-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800"
+      className="glass rounded-lg my-2 flex flex-col gap-4 p-4"
     >
       <h2 className="text-base font-semibold">{intent.title}</h2>
       <Details intent={intent} />
@@ -69,12 +69,12 @@ export function IntentProposal({ intent, toolCallId }: { intent: EventIntent; to
           type="button"
           onClick={confirm}
           disabled={pending}
-          className="rounded-full bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-black"
+          className="rounded-full bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50 hover:bg-primary/90"
         >
           {pending ? "Creating…" : "Confirm intent"}
         </button>
         {error && (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-destructive">
             {error}
           </p>
         )}
@@ -85,7 +85,7 @@ export function IntentProposal({ intent, toolCallId }: { intent: EventIntent; to
 
 export const IntentCard: ToolCallMessagePartComponent = ({ args, status, isError, toolCallId }) => {
   if (status.type === "running") {
-    return <p className="text-sm text-zinc-500">Drafting the event…</p>;
+    return <p className="text-sm text-muted-foreground">Drafting the event…</p>;
   }
 
   const parsed = intentSchema.safeParse(args);

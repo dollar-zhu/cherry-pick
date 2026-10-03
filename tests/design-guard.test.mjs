@@ -9,12 +9,7 @@ const SCAN = ["src/app", "src/components"];
 // Kit and brand components may hold literal colors; everything else uses tokens.
 const EXEMPT = ["src/components/ui/", "src/components/brand/"];
 // Files not yet moved onto the design system. PR 2 removes entries as it migrates them.
-const PENDING = new Set([
-  "src/components/assistant/intake.tsx",
-  "src/components/assistant/intent-card.tsx",
-  "src/components/assistant/thread.tsx",
-  "src/components/assistant/voice-chat.tsx",
-]);
+const PENDING = new Set([]);
 
 const PALETTE =
   /\b(?:bg|text|border|ring|from|via|to|fill|stroke|outline|divide|placeholder|shadow|decoration|accent|caret)-(?:(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}|(?:black|white)(?![\w-]))/;
@@ -74,4 +69,8 @@ test("every pending file still exists and still has raw colors (else remove it f
     assert.ok(existsSync(join(ROOT, path)), `${path} no longer exists`);
     assert.ok(rawColors(readFileSync(join(ROOT, path), "utf8")).length > 0, `${path} is clean, remove it from PENDING`);
   }
+});
+
+test("every page is on the design system (PENDING is empty)", () => {
+  assert.equal(PENDING.size, 0, `still pending: ${[...PENDING].join(", ")}`);
 });
