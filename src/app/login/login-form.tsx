@@ -1,55 +1,92 @@
 "use client";
 
-import { useActionState } from "react";
-import { authenticate } from "./actions";
+import { useActionState, useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { authenticate, type AuthActionState } from "./actions";
 
-const input =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-black";
-const button = "flex-1 rounded-full px-4 py-2 disabled:opacity-50";
+const initialState: AuthActionState = { message: null, kind: null };
 
 export function LoginForm({ nextPath }: { nextPath?: string }) {
-  const [message, action, pending] = useActionState(authenticate, null);
+  const [state, action, pending] = useActionState(authenticate, initialState);
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const signingUp = mode === "signup";
 
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-6 py-10 font-sans">
-      <h1 className="text-2xl font-semibold tracking-tight">Cherry Pick</h1>
-      <form action={action} className="flex flex-col gap-3">
-        {nextPath ? <input type="hidden" name="next" value={nextPath} /> : null}
-        <label className="flex flex-col gap-1 text-sm">
-          Email
-          <input name="email" type="email" required autoComplete="email" className={input} />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Password
-          <input
-            name="password"
-            type="password"
-            required
-            minLength={6}
-            autoComplete="current-password"
-            className={input}
-          />
-        </label>
-        {message && <p role="alert" className="text-sm text-red-600">{message}</p>}
-        <div className="flex gap-2">
-          <button
-            name="mode"
-            value="signin"
-            disabled={pending}
-            className={`${button} bg-zinc-900 text-white dark:bg-zinc-100 dark:text-black`}
-          >
-            Sign in
-          </button>
-          <button
-            name="mode"
-            value="signup"
-            disabled={pending}
-            className={`${button} border border-zinc-300 dark:border-zinc-700`}
-          >
-            Create account
-          </button>
-        </div>
-      </form>
-    </main>
+    <Card>
+      <CardHeader>
+        <CardTitle>{signingUp ? "Create your account" : "Welcome back"}</CardTitle>
+        <CardDescription>
+          {signingUp
+            ? "Use your work email and a password to create an account."
+            : "Enter your email and password to continue."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form action={action} className="grid gap-5">
+          <input type="hidden" name="mode" value={mode} />
+          {nextPath ? <input type="hidden" name="next" value={nextPath} /> : null}
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@company.com"
+              required
+              disabled={pending}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete={signingUp ? "new-password" : "current-password"}
+              minLength={6}
+              required
+              disabled={pending}
+            />
+          </div>
+
+          {state.message && (
+            <Alert variant={state.kind === "error" ? "destructive" : "default"}>
+              <AlertDescription role={state.kind === "error" ? "alert" : "status"}>
+                {state.message}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <Button type="submit" className="w-full" disabled={pending}>
+            {pending
+              ? signingUp ? "Creating account…" : "Signing in…"
+              : signingUp ? "Create account" : "Sign in"}
+          </Button>
+
+          <p className="text-center text-sm text-muted-foreground">
+            {signingUp ? "Already have an account?" : "New to Cherry Pick?"}{" "}
+            <button
+              type="button"
+              className="font-medium text-foreground underline underline-offset-4"
+              onClick={() => setMode(signingUp ? "signin" : "signup")}
+              disabled={pending}
+            >
+              {signingUp ? "Sign in" : "Create an account"}
+            </button>
+          </p>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

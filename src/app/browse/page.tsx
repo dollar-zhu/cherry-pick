@@ -19,7 +19,7 @@ export default async function BrowsePage() {
     .select("name")
     .eq("user_id", auth.claims.sub)
     .maybeSingle();
-  if (!profile) redirect("/profile");
+  if (!profile) redirect("/onboarding");
 
   const result = await listPostedEvents(supabase);
 

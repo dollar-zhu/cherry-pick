@@ -44,18 +44,9 @@ function Details({ intent }: { intent: EventIntent }) {
   );
 }
 
-export const IntentCard: ToolCallMessagePartComponent = ({ args, status, isError, toolCallId }) => {
+export function IntentProposal({ intent, toolCallId }: { intent: EventIntent; toolCallId: string }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-
-  if (status.type === "running") {
-    return <p className="text-sm text-zinc-500">Drafting the event…</p>;
-  }
-
-  const parsed = intentSchema.safeParse(args);
-  // Invalid input goes back to the model, which asks the user for the missing field.
-  if (isError || !parsed.success) return null;
-  const intent = parsed.data;
 
   function confirm() {
     setError(null);
@@ -90,4 +81,16 @@ export const IntentCard: ToolCallMessagePartComponent = ({ args, status, isError
       </div>
     </section>
   );
+}
+
+export const IntentCard: ToolCallMessagePartComponent = ({ args, status, isError, toolCallId }) => {
+  if (status.type === "running") {
+    return <p className="text-sm text-zinc-500">Drafting the event…</p>;
+  }
+
+  const parsed = intentSchema.safeParse(args);
+  // Invalid input goes back to the model, which asks the user for the missing field.
+  if (isError || !parsed.success) return null;
+
+  return <IntentProposal intent={parsed.data} toolCallId={toolCallId} />;
 };
