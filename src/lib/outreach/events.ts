@@ -1,8 +1,8 @@
-import type { MessageStatus } from "./send.ts";
+import { debitKeyFor, EMAIL_CREDIT_COST, type MessageStatus } from "./send.ts";
 
 /**
  * AgentMail delivery events for outreach messages (SUP-20):
- *   message.sent       → debit the message's credits (AgentMail confirmed the send)
+ *   message.sent       → confirm the debit (idempotent; send.ts reserved it before sending)
  *   message.delivered  → mark delivered
  *   message.bounced    → mark bounced, refund; permanent bounces are suppressed
  *   message.rejected   → mark failed, refund
@@ -31,7 +31,6 @@ export type TrackedMessage = {
   userId: string;
   eventId: string;
   recipientEmail: string;
-  creditCost: number;
   status: MessageStatus;
 };
 
@@ -52,7 +51,7 @@ export interface OutreachEventStore {
   }): Promise<void>;
 }
 
-export const debitKeyFor = (messageId: string) => `outreach:${messageId}`;
+export { debitKeyFor };
 
 // A later event must not move a message backwards (e.g. a late "sent" after "bounced").
 const RANK: Partial<Record<MessageStatus, number>> = { sending: 0, sent: 1, delivered: 2, bounced: 3, complained: 3, failed: 3 };
@@ -91,9 +90,9 @@ export async function handleAgentMailEvent(
         await audit("debit_skipped", { reason: `late sent event after ${m.status}` });
         return "handled";
       }
-      await store.debit(m.userId, m.creditCost, key, m.id);
+      await store.debit(m.userId, EMAIL_CREDIT_COST, key, m.id);
       await mark("sent");
-      await audit("credits_debited", { amount: m.creditCost });
+      await audit("credits_debited", { amount: EMAIL_CREDIT_COST });
       return "handled";
 
     case "message.delivered":
@@ -108,7 +107,7 @@ export async function handleAgentMailEvent(
         for (const r of bounce.recipients ?? []) await store.suppress(r.address, "bounced");
       }
       await mark("bounced", `${bounce.type}${bounce.subType ? `/${bounce.subType}` : ""}`);
-      await store.refundIfDebited(m.userId, m.creditCost, key, m.id);
+      await store.refundIfDebited(m.userId, EMAIL_CREDIT_COST, key, m.id);
       await audit("bounced", { type: bounce.type, subType: bounce.subType, suppressed: permanent });
       return "handled";
     }
@@ -116,7 +115,7 @@ export async function handleAgentMailEvent(
     case "message.rejected": {
       const { reject } = event as Extract<AgentMailEvent, { eventType: "message.rejected" }>;
       await mark("failed", reject.reason?.slice(0, 500));
-      await store.refundIfDebited(m.userId, m.creditCost, key, m.id);
+      await store.refundIfDebited(m.userId, EMAIL_CREDIT_COST, key, m.id);
       await audit("rejected", { reason: reject.reason });
       return "handled";
     }

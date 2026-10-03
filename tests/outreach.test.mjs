@@ -7,7 +7,7 @@ import {
   verifyWebhookSignature,
 } from "../src/lib/outreach/crypto.ts";
 import { debitKeyFor, handleAgentMailEvent } from "../src/lib/outreach/events.ts";
-import { DAILY_SEND_LIMIT, sendApprovedBatch, startOfUtcDay, withUnsubscribe } from "../src/lib/outreach/send.ts";
+import { DAILY_SEND_LIMIT, EMAIL_CREDIT_COST, sendApprovedBatch, startOfUtcDay, withUnsubscribe } from "../src/lib/outreach/send.ts";
 
 const SECRET = "test-unsubscribe-secret";
 const unsubscribe = { siteUrl: "https://app.example/", secret: SECRET };
@@ -83,20 +83,28 @@ const msg = (id, overrides = {}) => ({
   recipientEmail: `${id}@example.com`,
   subject: "Co-host?",
   bodyText: "Hi there",
-  creditCost: 1,
   status: "approved",
   ...overrides,
 });
 
-function sendFakes({ messages, suppressed = [], balance = 10, slotsLeft = DAILY_SEND_LIMIT, failFor = [] } = {}) {
+function sendFakes({ messages, suppressed = [], balance = 10, slotsLeft = DAILY_SEND_LIMIT, failFor = [], spendDuringSend = 0 } = {}) {
   const marks = [];
   const sends = [];
   const audits = [];
+  const ledger = new Map(); // idempotency key -> amount
   let slots = slotsLeft;
+  const sum = () => balance + [...ledger.values()].reduce((a, b) => a + b, 0);
   const store = {
     approveBatch: async () => messages,
     isSuppressed: async (email) => suppressed.includes(email),
-    creditBalance: async () => balance,
+    creditBalance: async () => sum(),
+    debit: async (_u, amount, key) => {
+      if (!ledger.has(key)) ledger.set(key, -amount);
+      if (spendDuringSend) { balance -= spendDuringSend; spendDuringSend = 0; } // concurrent spend
+    },
+    refundIfDebited: async (_u, amount, key) => {
+      if (ledger.has(key) && !ledger.has(`${key}:refund`)) ledger.set(`${key}:refund`, amount);
+    },
     claimSendSlot: async () => (slots-- > 0),
     markMessage: async (id, patch) => { marks.push({ id, ...patch }); },
     audit: async (e) => { audits.push(e); },
@@ -108,7 +116,7 @@ function sendFakes({ messages, suppressed = [], balance = 10, slotsLeft = DAILY_
       return { messageId: `am-${idempotencyKey}` };
     },
   };
-  return { store, mailer, marks, sends, audits };
+  return { store, mailer, marks, sends, audits, ledger, balance: sum };
 }
 
 const send = (f) => sendApprovedBatch({ batchId: "b1", userId: "u1", store: f.store, mailer: f.mailer, unsubscribe });
@@ -144,12 +152,33 @@ test("the daily limit defers the rest instead of sending", async () => {
   assert.ok(res.nextActions.some((a) => /tomorrow/.test(a)));
 });
 
-test("credits are checked against what this run already committed", async () => {
-  const f = sendFakes({ messages: [msg("m1", { creditCost: 2 }), msg("m2", { creditCost: 2 })], balance: 3 });
+test("each sent email is charged the server-side price before sending", async () => {
+  const f = sendFakes({ messages: [msg("m1", { credit_cost: 0, creditCost: -50 }), msg("m2")], balance: 5 });
+  await send(f);
+  assert.equal(f.balance(), 5 - 2 * EMAIL_CREDIT_COST); // draft-row prices are ignored
+  assert.deepEqual([...f.ledger.keys()], ["outreach:m1", "outreach:m2"]);
+});
+
+test("running out of credits stops sending without charging, and is retryable", async () => {
+  const f = sendFakes({ messages: [msg("m1"), msg("m2")], balance: EMAIL_CREDIT_COST });
   const res = await send(f);
   assert.equal(res.data.sent, 1);
   assert.equal(res.data.insufficientCredits, 1);
-  assert.equal(f.sends.length, 1);
+  assert.equal(f.ledger.has("outreach:m2"), false); // never debited, so a retry charges normally
+  assert.equal(f.balance(), 0);
+
+  const retry = sendFakes({ messages: [msg("m2", { status: "insufficient_credits" })], balance: 3 });
+  assert.equal((await send(retry)).data.sent, 1);
+  assert.equal(retry.balance(), 3 - EMAIL_CREDIT_COST);
+});
+
+test("a concurrent spend that overdraws is refunded and the email is not sent", async () => {
+  const f = sendFakes({ messages: [msg("m1")], balance: EMAIL_CREDIT_COST, spendDuringSend: EMAIL_CREDIT_COST });
+  const res = await send(f);
+  assert.equal(res.data.sent, 0);
+  assert.equal(f.sends.length, 0);
+  assert.equal(f.ledger.get("outreach:m1:refund"), EMAIL_CREDIT_COST);
+  assert.equal(f.marks.at(-1).status, "failed");
 });
 
 test("a failed send is recorded and does not stop the batch", async () => {
@@ -158,6 +187,7 @@ test("a failed send is recorded and does not stop the batch", async () => {
   assert.equal(res.data.failed, 1);
   assert.equal(res.data.sent, 1);
   assert.equal(f.marks.find((m) => m.id === "m1").status, "failed");
+  assert.equal(f.balance(), 10 - EMAIL_CREDIT_COST); // the failed send was refunded
 });
 
 test("already-handled messages are skipped, so approving twice never resends", async () => {
@@ -201,13 +231,13 @@ function eventFakes(message) {
 }
 
 const tracked = (status = "sent") => ({
-  id: "m1", userId: "u1", eventId: "e1", recipientEmail: "jane@example.com", creditCost: 2, status,
+  id: "m1", userId: "u1", eventId: "e1", recipientEmail: "jane@example.com", status,
 });
 
-test("message.sent debits the message's credits once, keyed by message id", async () => {
+test("message.sent confirms the same idempotent debit the send reserved", async () => {
   const { store, calls } = eventFakes(tracked());
   await handleAgentMailEvent({ eventType: "message.sent", eventId: "ev1", send: { messageId: "am-1", recipients: [] } }, store);
-  assert.deepEqual(calls.debits, [["u1", 2, debitKeyFor("m1"), "m1"]]);
+  assert.deepEqual(calls.debits, [["u1", EMAIL_CREDIT_COST, debitKeyFor("m1"), "m1"]]);
 });
 
 test("a permanent bounce suppresses the address and refunds", async () => {
@@ -218,7 +248,7 @@ test("a permanent bounce suppresses the address and refunds", async () => {
     bounce: { messageId: "am-1", type: "Permanent", subType: "General", recipients: [{ address: "jane@example.com" }] },
   }, store);
   assert.deepEqual(calls.suppressed, [["jane@example.com", "bounced"]]);
-  assert.deepEqual(calls.refunds, [["u1", 2, debitKeyFor("m1"), "m1"]]);
+  assert.deepEqual(calls.refunds, [["u1", EMAIL_CREDIT_COST, debitKeyFor("m1"), "m1"]]);
   assert.equal(calls.marks[0].status, "bounced");
 });
 

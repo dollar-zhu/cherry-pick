@@ -4,11 +4,16 @@ import { createUnsubscribeToken } from "./crypto.ts";
 /**
  * Sending an approved outreach batch (SUP-20). Drafts come from SUP-19
  * (prepare_outreach_batch) in outreach_messages with status "pending_approval".
- * Credits are not taken here: they are debited when AgentMail confirms the
- * send (see ./events.ts), and refunded if the message then bounces.
+ * Credits are reserved (debited) just before each send and refunded if the
+ * send fails, bounces or is rejected. AgentMail's "sent" confirmation re-applies
+ * the same idempotent debit (see ./events.ts), so it never charges twice.
  */
 
 export const DAILY_SEND_LIMIT = 5;
+/** Server-side price of one outreach email. Never read from the draft row, which users may edit. */
+export const EMAIL_CREDIT_COST = 1;
+
+export const debitKeyFor = (messageId: string) => `outreach:${messageId}`;
 
 export type MessageStatus =
   | "pending_approval"
@@ -31,11 +36,11 @@ export type OutreachMessage = {
   recipientEmail: string;
   subject: string;
   bodyText: string;
-  creditCost: number;
   status: MessageStatus;
 };
 
-const SENDABLE: ReadonlySet<MessageStatus> = new Set(["approved", "deferred"]);
+// insufficient_credits never holds a debit (see below), so it is safe to retry after a top-up.
+const SENDABLE: ReadonlySet<MessageStatus> = new Set(["approved", "deferred", "insufficient_credits"]);
 
 export interface OutreachSendStore {
   /**
@@ -45,6 +50,10 @@ export interface OutreachSendStore {
   approveBatch(batchId: string, userId: string): Promise<OutreachMessage[] | null>;
   isSuppressed(email: string): Promise<boolean>;
   creditBalance(userId: string): Promise<number>;
+  /** Idempotent per key. */
+  debit(userId: string, amount: number, key: string, ref: string): Promise<void>;
+  /** Idempotent per key; does nothing unless `debitKey` was charged. */
+  refundIfDebited(userId: string, amount: number, debitKey: string, ref: string): Promise<void>;
   /**
    * Atomically moves the message to "sending" if the user has sent fewer than
    * `limit` messages since `since`; otherwise marks it "deferred".
@@ -122,10 +131,6 @@ export async function sendApprovedBatch(input: {
   }
 
   const data: SendBatchData = { sent: 0, suppressed: 0, deferred: 0, insufficientCredits: 0, failed: 0, skipped: 0 };
-  // Credits are debited on AgentMail's confirmation, so count what this run has committed.
-  let committed = 0;
-  let balance: number | null = null;
-
   for (const m of messages) {
     if (!SENDABLE.has(m.status)) {
       data.skipped++;
@@ -143,10 +148,11 @@ export async function sendApprovedBatch(input: {
       continue;
     }
 
-    balance ??= await store.creditBalance(userId);
-    if (balance - committed < m.creditCost) {
+    // Check before debiting: a message turned away here never used its debit key.
+    const before = await store.creditBalance(userId);
+    if (before < EMAIL_CREDIT_COST) {
       await store.markMessage(m.id, { status: "insufficient_credits" });
-      await audit("insufficient_credits", { balance, committed, cost: m.creditCost });
+      await audit("insufficient_credits", { balance: before, cost: EMAIL_CREDIT_COST });
       data.insufficientCredits++;
       continue;
     }
@@ -157,18 +163,31 @@ export async function sendApprovedBatch(input: {
       continue;
     }
 
+    // Reserve the credits before sending. A concurrent spend that overdraws is
+    // undone; the key is then spent, so the message is final (failed), not retryable.
+    const key = debitKeyFor(m.id);
+    await store.debit(userId, EMAIL_CREDIT_COST, key, m.id);
+    const after = await store.creditBalance(userId);
+    if (after < 0) {
+      await store.refundIfDebited(userId, EMAIL_CREDIT_COST, key, m.id);
+      await store.markMessage(m.id, { status: "failed", error: "Credits were spent by another action at the same time" });
+      await audit("failed", { reason: "overdrawn_concurrently", balanceAfterDebit: after, refunded: true });
+      data.failed++;
+      continue;
+    }
+
     const { text, headers } = withUnsubscribe({ text: m.bodyText, email: m.recipientEmail }, input.unsubscribe);
     try {
       // Keyed by our message id: a retry after a timeout cannot send twice.
       const { messageId } = await mailer.send({ to: m.recipientEmail, subject: m.subject, text, headers }, m.id);
       await store.markMessage(m.id, { status: "sent", agentmailMessageId: messageId });
-      await audit("sent", { agentmailMessageId: messageId, creditCost: m.creditCost });
-      committed += m.creditCost;
+      await audit("sent", { agentmailMessageId: messageId, creditsCharged: EMAIL_CREDIT_COST });
       data.sent++;
     } catch (e) {
       const error = e instanceof Error ? e.message : String(e);
+      await store.refundIfDebited(userId, EMAIL_CREDIT_COST, key, m.id);
       await store.markMessage(m.id, { status: "failed", error: error.slice(0, 500) });
-      await audit("failed", { error });
+      await audit("failed", { error, refunded: true });
       data.failed++;
     }
   }
@@ -182,7 +201,7 @@ export async function sendApprovedBatch(input: {
   ].filter(Boolean);
 
   const nextActions: string[] = [];
-  if (data.sent) nextActions.push("Watch for replies; credits are charged when AgentMail confirms each send.");
+  if (data.sent) nextActions.push("Watch for replies. Bounced or rejected emails are refunded automatically.");
   if (data.deferred) nextActions.push("Approve the batch again tomorrow to send the deferred emails.");
   if (data.insufficientCredits) nextActions.push("Buy credits, then approve the batch again.");
   if (data.failed) nextActions.push("Check the failed recipients' addresses, then approve again.");

@@ -11,7 +11,7 @@ import type { MessageStatus, OutreachMessage, OutreachSendStore } from "./send";
  *
  * Expected outreach_messages columns:
  *   id, batch_id, user_id, event_id, recipient_email, subject, body_text,
- *   credit_cost, status, approved_by, approved_at, sent_at,
+ *   status, approved_by, approved_at, sent_at,
  *   agentmail_message_id (unique), error
  */
 const T = {
@@ -26,7 +26,7 @@ const UNIQUE_VIOLATION = "23505";
 const COUNTS_TOWARD_LIMIT: MessageStatus[] = ["sending", "sent", "delivered", "bounced", "complained"];
 
 const MESSAGE_COLUMNS =
-  "id, batch_id, user_id, event_id, recipient_email, subject, body_text, credit_cost, status";
+  "id, batch_id, user_id, event_id, recipient_email, subject, body_text, status";
 
 function toMessage(r: Record<string, unknown>): OutreachMessage {
   return {
@@ -37,7 +37,6 @@ function toMessage(r: Record<string, unknown>): OutreachMessage {
     recipientEmail: String(r.recipient_email).trim().toLowerCase(),
     subject: r.subject as string,
     bodyText: r.body_text as string,
-    creditCost: Number(r.credit_cost),
     status: r.status as MessageStatus,
   };
 }
@@ -105,7 +104,7 @@ export function createOutreachStore(db: SupabaseClient): OutreachSendStore & Out
         .update({ status: "sending", sent_at: new Date().toISOString() })
         .eq("id", messageId)
         .eq("user_id", userId)
-        .in("status", ["approved", "deferred"])
+        .in("status", ["approved", "deferred", "insufficient_credits"])
         .select("id");
       if (claim.error) throw claim.error;
       if (!claim.data?.length) return false; // already claimed elsewhere
@@ -150,7 +149,6 @@ export function createOutreachStore(db: SupabaseClient): OutreachSendStore & Out
         userId: m.userId,
         eventId: m.eventId,
         recipientEmail: m.recipientEmail,
-        creditCost: m.creditCost,
         status: m.status,
       };
       return tracked;
