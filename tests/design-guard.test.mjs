@@ -10,13 +10,9 @@ const SCAN = ["src/app", "src/components"];
 const EXEMPT = ["src/components/ui/", "src/components/brand/"];
 // Files not yet moved onto the design system. PR 2 removes entries as it migrates them.
 const PENDING = new Set([
-  "src/app/(app)/events/[id]/find-matches-button.tsx",
-  "src/app/(app)/events/[id]/loading.tsx",
-  "src/app/(app)/events/[id]/page.tsx",
   "src/app/(app)/inbox/loading.tsx",
   "src/app/(app)/inbox/page.tsx",
   "src/app/(app)/inbox/respond-form.tsx",
-  "src/app/(app)/page.tsx",
   "src/app/(app)/profile/profile-form.tsx",
   "src/app/agents/page.tsx",
   "src/app/approvals/[id]/decide-form.tsx",
@@ -31,11 +27,6 @@ const PENDING = new Set([
   "src/components/assistant/thread.tsx",
   "src/components/assistant/voice-chat.tsx",
   "src/components/copy-block.tsx",
-  "src/components/events/approval-queue.tsx",
-  "src/components/events/incoming-applications.tsx",
-  "src/components/events/invite-list.tsx",
-  "src/components/events/invite-status.tsx",
-  "src/components/events/matches-table.tsx",
 ]);
 
 const PALETTE =

@@ -12,12 +12,12 @@ const LABELS: Record<InviteStatus, string> = {
 };
 
 const STYLES: Record<InviteStatus, string> = {
-  pending: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200",
-  accepted: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
-  applied: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
-  declined: "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
-  approved: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200",
-  rejected: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200",
+  pending: "bg-muted text-foreground",
+  accepted: "bg-warning/15 text-warning",
+  applied: "bg-warning/15 text-warning",
+  declined: "bg-muted text-muted-foreground",
+  approved: "bg-success/15 text-success",
+  rejected: "bg-destructive/15 text-destructive",
 };
 
 export function isInviteStatus(value: string): value is InviteStatus {

@@ -1,5 +1,6 @@
 "use client";
 
+import { buttonVariants } from "@/components/ui/button";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { findMatches } from "@/lib/actions/matching";
@@ -38,25 +39,25 @@ export function FindMatchesButton({ eventId }: Props) {
           type="button"
           onClick={run}
           disabled={pending}
-          className="rounded-full bg-zinc-900 px-4 py-1.5 text-sm text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-black"
+          className={buttonVariants({ variant: "brand" })}
         >
           {pending ? "Finding…" : "Find matches"}
         </button>
         {feedback?.kind === "error" && (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-destructive">
             {feedback.message}
           </p>
         )}
       </div>
       {feedback?.kind === "empty" && (
-        <p role="status" className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p role="status" className="text-sm text-muted-foreground">
           No organizations matched these constraints.
         </p>
       )}
       {feedback?.kind === "ranking_failed" && (
         <p
           role="alert"
-          className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
+          className="rounded-field border border-warning/30 bg-warning/10 px-4 py-2 text-sm text-warning"
         >
           Ranking unavailable — showing unranked results.
         </p>

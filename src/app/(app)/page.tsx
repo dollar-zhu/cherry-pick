@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 import { IncomingApplications } from "@/components/events/incoming-applications";
 import { listApplications } from "@/lib/cohost";
 import { createClient } from "@/lib/supabase/server";
@@ -18,7 +19,7 @@ export default async function Home() {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-10 font-sans">
       {"error" in applications ? (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-destructive">
           Could not load applications.
         </p>
       ) : (
@@ -29,21 +30,21 @@ export default async function Home() {
         <h1 className="text-2xl font-semibold tracking-tight">Your events</h1>
         <Link
           href="/events/new"
-          className="rounded-full bg-zinc-900 px-4 py-2 text-sm text-white dark:bg-zinc-100 dark:text-black"
+          className={buttonVariants()}
         >
           Plan an event
         </Link>
       </div>
       {events && events.length > 0 ? (
-        <ul className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 dark:divide-zinc-800/60 dark:border-zinc-800">
+        <ul className="glass rounded-lg divide-y divide-border">
           {events.map((event) => (
             <li key={event.id}>
               <Link
                 href={`/events/${event.id}`}
-                className="flex items-center justify-between gap-4 px-4 py-3 text-sm transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                className="flex items-center justify-between gap-4 px-4 py-3 text-sm transition-colors hover:bg-muted"
               >
                 <span className="font-medium">{event.title}</span>
-                <span className="shrink-0 text-zinc-500">
+                <span className="shrink-0 text-muted-foreground">
                   {event.city} ·{" "}
                   {new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: event.timezone }).format(
                     new Date(event.date_start),
@@ -54,7 +55,7 @@ export default async function Home() {
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-muted-foreground">
           No events yet. Plan one, and we will find partner companies for it.
         </p>
       )}
