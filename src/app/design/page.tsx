@@ -42,7 +42,7 @@ export default function DesignPage() {
   return (
     <>
       <Glow intensity="app" />
-      <main className="relative z-10 mx-auto grid w-full max-w-5xl gap-12 px-6 py-10">
+      <main className="above-glow mx-auto grid w-full max-w-5xl gap-12 px-6 py-10">
         <PageHeader
           title="Design system"
           description="Every token and component in one place. Dev only."

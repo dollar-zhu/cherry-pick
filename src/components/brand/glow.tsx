@@ -3,7 +3,7 @@ type GlowProps = {
   intensity?: "app" | "hero";
 };
 
-/** One fixed glow behind the page. Put page content in a `relative z-10` wrapper above it. */
+/** One fixed glow behind the page. Put page content in an `above-glow` wrapper. */
 export function Glow({ intensity = "app" }: GlowProps) {
   return (
     <div aria-hidden="true" data-intensity={intensity} className="cp-glow">

@@ -51,6 +51,6 @@ The design system lives in `src/app/globals.css` (tokens), `src/components/ui/` 
 - White (`<Button>`) is the everyday primary action. `<Button variant="brand">` is only for AI and brand actions (find co-hosts, voice, publish). Red (`variant="destructive"`) only for actions that lose something.
 - Panels and cards use `glass`, inputs use `glass-inset`, menus and dialogs use `glass-raised`.
 - Never put text on `bg-brand-gradient`. Use `bg-brand-gradient-text` for anything with white text.
-- One `<Glow>` per page, behind a `relative z-10` content wrapper. `intensity="app"` for signed-in pages, `"hero"` for login, onboarding and empty states.
+- One `<Glow>` per page, behind an `above-glow` content wrapper (z 1, so the sticky top bar at z-10 stays on top). `intensity="app"` for signed-in pages, `"hero"` for login, onboarding and empty states.
 - The voice feature sets `<Orb state>` only. Don't restyle the orb in feature code.
 - Dark only, desktop only.

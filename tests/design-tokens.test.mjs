@@ -129,3 +129,27 @@ test("white text on the text-safe brand gradient is at least 4.5:1 at both ends"
 test("primary button text on white is at least 4.5:1", () => {
   assert.ok(contrast(parseColor(token("primary-foreground")).rgb, [255, 255, 255]) >= 4.5);
 });
+
+// ---------- compiled-CSS pitfalls ----------
+
+test("glass utilities use unprefixed backdrop-filter (the build adds the -webkit- prefix itself)", () => {
+  // A hand-written -webkit- line after the unprefixed one replaces it in the compiled CSS,
+  // and Chrome/Firefox then render no blur at all.
+  assert.doesNotMatch(css, /-webkit-backdrop-filter/);
+  for (const u of ["glass", "glass-inset", "glass-raised"]) {
+    const block = css.match(new RegExp(`@utility ${u} \\{([^}]*)\\}`));
+    assert.ok(block, `@utility ${u} missing`);
+    assert.match(block[1], /(^|\s)backdrop-filter:\s*blur\(24px\)/, `${u} lost its blur`);
+  }
+});
+
+test("page content sits above the glow and below the sticky top bar (z-10)", () => {
+  const glowZ = Number(css.match(/\.cp-glow\s*\{[^}]*z-index:\s*(-?\d+)/)[1]);
+  const block = css.match(/@utility above-glow \{([^}]*)\}/);
+  assert.ok(block, "@utility above-glow missing");
+  const contentZ = Number(block[1].match(/z-index:\s*(-?\d+)/)[1]);
+  assert.ok(contentZ > glowZ && contentZ < 10, `content z ${contentZ} must be above glow ${glowZ} and below 10`);
+  const design = readFileSync(new URL("../src/app/design/page.tsx", import.meta.url), "utf8");
+  assert.match(design, /\babove-glow\b/);
+  assert.doesNotMatch(design, /\bz-10\b/);
+});
