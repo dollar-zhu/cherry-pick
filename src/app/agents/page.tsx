@@ -5,6 +5,7 @@ import { CopyBlock } from "@/components/copy-block";
 import { MCP_TOOL_LIST } from "@/lib/mcp/tools";
 import { siteUrl } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
+import { pageTitle } from "@/components/styles";
 
 export const metadata: Metadata = { title: "Connect your agent · Cherry Pick" };
 
@@ -28,7 +29,7 @@ export default async function AgentsPage() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 pb-16 pt-12 sm:px-6">
       <div className="flex flex-col gap-2">
-        <h1 className="font-display text-4xl tracking-[-0.02em] text-ink sm:text-5xl">Connect your agent</h1>
+        <h1 className={pageTitle}>Connect your agent</h1>
         <p className="text-sm text-ink-2">
           Claude Code, Claude Desktop, Cursor, or Poke sign in as you. The agent asks for your company and
           the events you care about, then you can create an event or browse events other companies posted and apply to co-host. Hosts approve or reject those applications.

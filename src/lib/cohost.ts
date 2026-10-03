@@ -82,16 +82,12 @@ export type CohostApplication = {
   companyName: string;
 };
 
-/** Applications and accepted invites on events that ownerId hosts. */
 export async function listApplications(
   supabase: SupabaseClient,
-  ownerId: string,
 ): Promise<{ error: string } | { applications: CohostApplication[] }> {
-  // RLS also returns the caller's own outgoing applications, so filter to events they host.
   const { data, error } = await supabase
     .from("invites")
-    .select("id, status, note, event_id, events!inner(title, owner_id), profiles(name)")
-    .eq("events.owner_id", ownerId)
+    .select("id, status, note, event_id, events!inner(title), profiles(name)")
     .in("status", ["applied", "accepted"])
     .order("created_at", { ascending: false });
   if (error) return { error: "Could not load applications." };

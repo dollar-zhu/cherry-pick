@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { CoverPill, EventCover, cardGrid } from "@/components/event-card";
 import { InviteStatusBadge } from "@/components/events/invite-status";
 import { pageTitle } from "@/components/styles";
-import { loadInbox } from "@/lib/invites";
+import { loadInbox, needsReply } from "@/lib/invites";
 import { createClient } from "@/lib/supabase/server";
 import { RespondForm } from "./respond-form";
 
@@ -24,7 +24,7 @@ export default async function InboxPage() {
     .maybeSingle();
   if (!profile) redirect("/profile");
 
-  const { invites, error } = await loadInbox(supabase);
+  const { invites, error } = await loadInbox();
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-4 pb-24 pt-12 sm:px-6">
@@ -55,7 +55,7 @@ export default async function InboxPage() {
                 date={invite.dateStart}
                 timezone={invite.timezone}
                 badge={
-                  invite.status === "pending" && invite.requestedBy === "host" ? (
+                  needsReply(invite) ? (
                     <CoverPill>Waiting for you</CoverPill>
                   ) : (
                     <InviteStatusBadge status={invite.status} />
@@ -77,7 +77,7 @@ export default async function InboxPage() {
               {invite.status === "applied" && (
                 <p className="text-sm text-ink-2">Waiting on the host.</p>
               )}
-              {invite.status === "pending" && invite.requestedBy === "host" && (
+              {needsReply(invite) && (
                 <RespondForm inviteId={invite.id} />
               )}
             </li>

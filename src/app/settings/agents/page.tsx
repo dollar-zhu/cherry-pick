@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { revokeAgentToken } from "./actions";
 import { IssueTokenForm } from "./issue-token-form";
+import { pageTitle } from "@/components/styles";
 
 export const metadata: Metadata = { title: "Agent tokens · Cherry Pick" };
 
@@ -20,7 +21,7 @@ export default async function AgentTokensPage() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 pb-16 pt-12 sm:px-6">
       <div className="flex flex-col gap-2">
-        <h1 className="font-display text-4xl tracking-[-0.02em] text-ink sm:text-5xl">Agent tokens</h1>
+        <h1 className={pageTitle}>Agent tokens</h1>
         <p className="text-sm text-ink-2">
           Prefer the OAuth consent screen on{" "}
           <Link href="/agents" className="underline">

@@ -9,8 +9,8 @@ export const reviewApplicationsTool = {
     "List co-host applications and accepted invites waiting on the signed-in host. Status applied means the company asked to join. Status accepted means they accepted a host invite.",
   schema: {},
   async run(_args: Record<string, never>, extra: { authInfo?: AuthInfo }): Promise<ToolResponse> {
-    const { supabase, userId } = callerFrom(extra);
-    const result = await listApplications(supabase, userId);
+    const { supabase } = callerFrom(extra);
+    const result = await listApplications(supabase);
     if ("error" in result) return toolFailed(result.error, ["Try review_applications again."]);
 
     return toolSuccess(

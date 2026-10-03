@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { decideAuthorization } from "./actions";
 import { createClient } from "@/lib/supabase/server";
+import { pageTitle } from "@/components/styles";
 
 export default async function ConsentPage({ searchParams }: PageProps<"/oauth/consent">) {
   const params = await searchParams;
@@ -9,7 +10,7 @@ export default async function ConsentPage({ searchParams }: PageProps<"/oauth/co
   if (!authorizationId) {
     return (
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-6 py-10 font-sans">
-        <h1 className="font-display text-4xl tracking-[-0.02em] text-ink sm:text-5xl">Missing authorization</h1>
+        <h1 className={pageTitle}>Missing authorization</h1>
         <p className="text-sm text-ink-2">Start the connection from your agent again.</p>
       </main>
     );
@@ -27,7 +28,7 @@ export default async function ConsentPage({ searchParams }: PageProps<"/oauth/co
   if (error || !details) {
     return (
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-6 py-10 font-sans">
-        <h1 className="font-display text-4xl tracking-[-0.02em] text-ink sm:text-5xl">Could not authorize</h1>
+        <h1 className={pageTitle}>Could not authorize</h1>
         <p role="alert" className="text-sm text-brand">
           {error?.message ?? "This authorization request is invalid or expired."}
         </p>
@@ -41,7 +42,7 @@ export default async function ConsentPage({ searchParams }: PageProps<"/oauth/co
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-6 py-10 font-sans">
-      <h1 className="font-display text-4xl tracking-[-0.02em] text-ink sm:text-5xl">Authorize {details.client.name}</h1>
+      <h1 className={pageTitle}>Authorize {details.client.name}</h1>
       <p className="text-sm text-ink-2">
         This agent will act as you. It can read your events and draft work. Anything that sends or
         publishes still needs your approval.

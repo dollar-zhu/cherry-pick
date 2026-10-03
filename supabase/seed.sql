@@ -5,8 +5,6 @@
 -- Weekdays: 0 = Sun ... 4 = Thu ... 6 = Sat.
 -- The end of this file adds demo events that every company sees on /browse.
 
--- Demo host logins own the demo events. Deleting them also deletes their events (cascade).
-delete from auth.users where email like '%@demo.cherrypick.invalid';
 delete from public.profiles where is_demo;
 
 insert into public.profiles
@@ -109,6 +107,7 @@ values
 -- So eight demo companies above get a login user. The password is empty: nobody can sign in.
 -- Linking a user does not change matching, so the demo story above stays the same.
 -- Nobody answers applications to these events: they stay "Waiting on the host".
+-- Do not delete the demo users: that cascades to their events and to real companies' applications.
 
 insert into auth.users
   (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -125,7 +124,8 @@ select id::uuid, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authe
     ('d0000000-0000-4000-8000-000000000006', 'brooklyn-ml@demo.cherrypick.invalid'),
     ('d0000000-0000-4000-8000-000000000007', 'austin-cloud@demo.cherrypick.invalid'),
     ('d0000000-0000-4000-8000-000000000008', 'berkeley-oss@demo.cherrypick.invalid')
-  ) as hosts (id, email);
+  ) as hosts (id, email)
+on conflict (id) do nothing;
 
 update public.profiles
    set user_id = hosts.user_id::uuid
@@ -141,7 +141,8 @@ update public.profiles
   ) as hosts (name, user_id)
  where profiles.is_demo and profiles.name = hosts.name;
 
--- Dates are relative to the day the seed runs, so the events stay upcoming. Run the seed again to move them.
+-- Dates are relative to the day the seed runs, so the events stay upcoming.
+-- Running the seed again moves only the dates. Event ids and applications stay.
 -- in_days and start time are in the event's own time zone.
 insert into public.events
   (owner_id, source_tool_call_id, title, topic, goal, format, city, timezone,
@@ -196,4 +197,6 @@ select owner::uuid, 'demo-seed-' || n, title, topic, goal, format, city, tz,
         'San Francisco', 'America/Los_Angeles', 30, time '18:30', 2, 50, 100000,
         'A design tool company that can bring a speaker and snacks.')
   ) as e (n, owner, title, topic, goal, format, city, tz, in_days, start_at, hours, guests, budget_cents,
-          partner_criteria);
+          partner_criteria)
+on conflict (owner_id, source_tool_call_id) do update
+  set date_start = excluded.date_start, date_end = excluded.date_end;

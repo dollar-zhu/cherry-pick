@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ApprovalCard } from "@/components/approvals/approval-card";
 import { createClient } from "@/lib/supabase/server";
 import { DecideForm } from "./decide-form";
+import { pageTitle } from "@/components/styles";
 
 export const metadata: Metadata = { title: "Approval · Cherry Pick" };
 
@@ -24,7 +25,7 @@ export default async function ApprovalPage({ params }: PageProps<"/approvals/[id
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 pb-16 pt-12 sm:px-6">
-      <h1 className="font-display text-4xl tracking-[-0.02em] text-ink sm:text-5xl">Approval</h1>
+      <h1 className={pageTitle}>Approval</h1>
       <p className="text-sm text-ink-2">
         This is the exact action an agent asked for. Approving records your decision and runs the action when that tool is connected. Rejecting stops it.
       </p>

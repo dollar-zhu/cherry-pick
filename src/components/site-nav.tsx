@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "@/app/login/actions";
+import { loadCompanyName, loadInbox, needsReply } from "@/lib/invites";
 import { createClient } from "@/lib/supabase/server";
 import { Monogram } from "./monogram";
 import { NavLinks } from "./nav-links";
@@ -13,17 +14,9 @@ export async function SiteNav() {
     const supabase = await createClient();
     const { data: auth } = await supabase.auth.getClaims();
     if (auth?.claims) {
-      const [{ data: profile }, { data: invites }] = await Promise.all([
-        supabase.from("profiles").select("name").eq("user_id", auth.claims.sub).maybeSingle(),
-        supabase.rpc("my_invites"),
-      ]);
-      const waiting = Array.isArray(invites)
-        ? invites.filter(
-            (invite: { status: string; requested_by?: string }) =>
-              invite.status === "pending" && invite.requested_by !== "partner",
-          ).length
-        : 0;
-      account = { company: profile?.name ?? null, waiting };
+      const [company, inbox] = await Promise.all([loadCompanyName(), loadInbox()]);
+      const waiting = inbox.invites.filter(needsReply).length;
+      account = { company, waiting };
     }
   }
 
@@ -35,9 +28,9 @@ export async function SiteNav() {
       >
         <Link href="/" className="flex shrink-0 items-center transition-opacity duration-[var(--dur-micro)] hover:opacity-80">
           {/* Brand files: color logo on light paper, white logo on dark. The cherry alone on narrow phones. */}
-          <Image src="/brand/lockup-color.png" alt="cherrypick" width={1200} height={271} priority className="hidden h-7 w-auto min-[400px]:block dark:min-[400px]:hidden" />
-          <Image src="/brand/lockup-white.png" alt="cherrypick" width={1200} height={271} priority className="hidden h-7 w-auto dark:min-[400px]:block" />
-          <Image src="/brand/mark.png" alt="cherrypick" width={512} height={512} priority className="size-8 min-[400px]:hidden" />
+          <Image src="/brand/lockup-color.png" alt="cherrypick" width={124} height={28} className="hidden h-7 w-auto min-[400px]:block dark:min-[400px]:hidden" />
+          <Image src="/brand/lockup-white.png" alt="cherrypick" width={124} height={28} className="hidden h-7 w-auto dark:min-[400px]:block" />
+          <Image src="/brand/mark.png" alt="cherrypick" width={32} height={32} className="size-8 min-[400px]:hidden" />
         </Link>
         {account && (
           <div className="flex items-center gap-1.5 sm:gap-2">

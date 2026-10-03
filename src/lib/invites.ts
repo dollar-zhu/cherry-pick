@@ -1,6 +1,7 @@
+import { cache } from "react";
 import { z } from "zod";
 import { isInviteStatus, type InviteStatus } from "@/components/events/invite-status";
-import type { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 const inboxRow = z.object({
   id: z.string().uuid(),
@@ -35,8 +36,15 @@ export type InboxInvite = {
   createdAt: string;
 };
 
-/** Invites sent to the signed-in user's company, newest first. */
-export async function loadInbox(supabase: Awaited<ReturnType<typeof createClient>>) {
+/** An invite from a host that this company has not answered yet. */
+export const needsReply = (invite: InboxInvite) => invite.status === "pending" && invite.requestedBy === "host";
+
+/**
+ * Invites sent to the signed-in user's company, newest first.
+ * Cached per request: the top bar and the page share one call.
+ */
+export const loadInbox = cache(async () => {
+  const supabase = await createClient();
   const { data: rows, error } = await supabase.rpc("my_invites");
   if (error) console.error("[inbox]", error);
   const invites: InboxInvite[] = (Array.isArray(rows) ? rows : [])
@@ -64,4 +72,13 @@ export async function loadInbox(supabase: Awaited<ReturnType<typeof createClient
     })
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   return { invites, error };
-}
+});
+
+/** The signed-in company's name. Cached per request like loadInbox. */
+export const loadCompanyName = cache(async (): Promise<string | null> => {
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getClaims();
+  if (!auth?.claims) return null;
+  const { data } = await supabase.from("profiles").select("name").eq("user_id", auth.claims.sub).maybeSingle();
+  return data?.name ?? null;
+});

@@ -67,7 +67,7 @@ export default async function BrowsePage() {
                   </p>
                   <p className="text-sm text-ink-2">
                     {event.city} · {event.dates_flexible ? "Flexible, " : ""}
-                    {formatDate(event.date_start, event.timezone)}
+                    {formatDate(event.date_start, event.timezone)} – {formatDate(event.date_end, event.timezone)}
                   </p>
                   <p className="mt-1 text-sm text-ink">
                     {event.topic} · {event.format}

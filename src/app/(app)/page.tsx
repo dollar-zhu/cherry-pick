@@ -4,7 +4,7 @@ import { IncomingApplications } from "@/components/events/incoming-applications"
 import { InviteStatusBadge } from "@/components/events/invite-status";
 import { pageTitle } from "@/components/styles";
 import { listApplications } from "@/lib/cohost";
-import { loadInbox } from "@/lib/invites";
+import { loadCompanyName, loadInbox, needsReply } from "@/lib/invites";
 import { createClient } from "@/lib/supabase/server";
 
 const isPast = (end: string) => new Date(end).getTime() < Date.now();
@@ -14,23 +14,18 @@ const plural = (count: number, word: string) => `${count} ${word}${count === 1 ?
 export default async function Home() {
   // The (app) layout already sends signed-out users and users with no profile away.
   const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getClaims();
-  const userId = auth?.claims?.sub ?? "";
-
-  // RLS returns only the signed-in user's events.
-  const [{ data: profile }, { data: events }, inbox, applications] = await Promise.all([
-    supabase.from("profiles").select("name").eq("user_id", userId).maybeSingle(),
+  // RLS returns only the signed-in user's events. The top bar already loaded the name and inbox.
+  const [company, { data: events }, inbox, applications] = await Promise.all([
+    loadCompanyName(),
     supabase
       .from("events")
       .select("id, title, topic, city, date_start, date_end, timezone")
       .order("date_start", { ascending: true }),
-    loadInbox(supabase),
-    listApplications(supabase, userId),
+    loadInbox(),
+    listApplications(supabase),
   ]);
 
   const eventList = events ?? [];
-  const needsReply = (invite: (typeof inbox.invites)[number]) =>
-    invite.status === "pending" && invite.requestedBy === "host";
   // Invites that need an answer come first.
   const invites = [...inbox.invites]
     .sort((a, b) => Number(needsReply(b)) - Number(needsReply(a)))
@@ -40,9 +35,9 @@ export default async function Home() {
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-16 px-4 pb-24 pt-12 sm:px-6">
       <header className="reveal flex flex-col gap-2">
-        <h1 className={`${pageTitle} [overflow-wrap:anywhere]`}>{profile?.name ?? "Your company"}</h1>
+        <h1 className={`${pageTitle} [overflow-wrap:anywhere]`}>{company ?? "Your company"}</h1>
         <p className="text-ink-2">
-          {plural(eventList.length, "event")} planned
+          {plural(eventList.filter((event) => !isPast(event.date_end)).length, "upcoming event")}
           {waiting > 0 && (
             <>
               {" · "}
