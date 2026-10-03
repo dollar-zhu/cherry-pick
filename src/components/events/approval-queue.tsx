@@ -8,6 +8,7 @@ import { InviteStatusBadge, type InviteStatus } from "./invite-status";
 export type ApprovalRow = {
   id: string;
   profileName: string;
+  isDemo: boolean;
   status: InviteStatus;
   note: string | null;
 };

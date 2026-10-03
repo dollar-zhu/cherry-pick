@@ -7,7 +7,7 @@ import { FindMatchesButton } from "./find-matches-button";
 import { MatchesTable, type MatchRow } from "@/components/events/matches-table";
 import { ApprovalQueue, type ApprovalRow } from "@/components/events/approval-queue";
 import { InviteList, type InviteListRow } from "@/components/events/invite-list";
-import { isInviteStatus } from "@/components/events/invite-status";
+import { isInviteStatus, type InviteStatus } from "@/components/events/invite-status";
 
 export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   const { id } = await params;
@@ -31,18 +31,19 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
 
   const { data: candidateRows, error: candidateError } = await supabase
     .from("event_candidates")
-    .select("id, profile_id, score, reasons, open_questions, profiles(name, city)")
+    .select("id, profile_id, score, reasons, open_questions, profiles(name, city, is_demo)")
     .eq("event_id", id)
     .order("score", { ascending: false, nullsFirst: false });
 
   const candidates: MatchRow[] = (candidateRows ?? []).map((row) => {
     // Supabase returns a to-one join as an object; cast through unknown to satisfy TS.
-    const profile = row.profiles as unknown as { name: string; city: string } | null;
+    const profile = row.profiles as unknown as { name: string; city: string; is_demo: boolean } | null;
     return {
       id: row.id as string,
       profileId: row.profile_id as string,
       profileName: profile?.name ?? "Unknown",
       profileCity: profile?.city ?? "",
+      isDemo: profile?.is_demo ?? false,
       score: row.score == null ? null : Number(row.score),
       reasons: (row.reasons as string[]) ?? [],
       openQuestions: (row.open_questions as string[]) ?? [],
@@ -51,25 +52,26 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
 
   const { data: inviteRows, error: inviteError } = await supabase
     .from("invites")
-    .select("id, profile_id, status, note, profiles(name)")
+    .select("id, profile_id, status, note, profiles(name, is_demo)")
     .eq("event_id", id)
     .order("created_at", { ascending: false });
   if (inviteError) console.error("[event invites]", inviteError);
 
   const invites: InviteListRow[] = [];
   const awaitingDecision: ApprovalRow[] = [];
-  const invitedProfileIds: string[] = [];
+  const inviteStatus: Record<string, InviteStatus> = {};
   for (const row of inviteRows ?? []) {
     if (!isInviteStatus(row.status)) continue;
-    const profile = row.profiles as unknown as { name: string } | null;
+    const profile = row.profiles as unknown as { name: string; is_demo: boolean } | null;
     const invite: InviteListRow = {
       id: row.id as string,
       profileName: profile?.name ?? "Unknown",
+      isDemo: profile?.is_demo ?? false,
       status: row.status,
       note: (row.note as string | null) ?? null,
     };
     invites.push(invite);
-    invitedProfileIds.push(row.profile_id as string);
+    inviteStatus[row.profile_id as string] = row.status;
     if (row.status === "accepted") awaitingDecision.push(invite);
   }
 
@@ -119,7 +121,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
             Saved matches could not be loaded. Reload the page or click Find matches.
           </p>
         ) : (
-          <MatchesTable rows={candidates} eventId={id} invitedProfileIds={invitedProfileIds} />
+          <MatchesTable rows={candidates} eventId={id} inviteStatus={inviteStatus} />
         )}
       </section>
 
