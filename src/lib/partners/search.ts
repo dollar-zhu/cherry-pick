@@ -1,4 +1,4 @@
-import { generateText, Output } from "ai";
+import { generateText, NoObjectGeneratedError, Output } from "ai";
 import Exa from "exa-js";
 import { z } from "zod";
 import type { EventIntent } from "../intent";
@@ -45,7 +45,11 @@ export async function searchCohostPartners(
   intent: EventIntent,
   deps: SearchDeps = defaultDeps(),
 ): Promise<SearchOutcome> {
-  const queries = await deps.generateQueries(intent).then(normalizeQueries, () => []);
+  const queries = await deps.generateQueries(intent).then(normalizeQueries, (e) => {
+    // A cancelled call must stop here, not fall through to paid web searches.
+    if (e instanceof Error && e.name === "AbortError") throw e;
+    return [];
+  });
   const finalQueries = queries.length >= 3 ? queries : fallbackQueries(intent);
 
   const settled = await Promise.allSettled(finalQueries.map((q) => deps.search(q)));
@@ -100,8 +104,31 @@ export function canonicalUrl(url: string): string | null {
   }
 }
 
-export function hostOf(url: string): string | null {
-  return canonicalUrl(url)?.split("/")[0] ?? null;
+/**
+ * Platforms that host many unrelated communities, with how many leading path
+ * segments identify one community (meetup.com/<group>, linkedin.com/groups/<id>).
+ */
+const MULTI_TENANT_HOSTS: Record<string, number> = {
+  "meetup.com": 1,
+  "lu.ma": 1,
+  "luma.com": 1,
+  "eventbrite.com": 2,
+  "linkedin.com": 2,
+  "facebook.com": 2,
+  "discord.com": 2,
+  "discord.gg": 1,
+  "github.com": 1,
+  "x.com": 1,
+  "twitter.com": 1,
+  "instagram.com": 1,
+};
+
+/** Site key of a community: its host, or host + group path on multi-tenant platforms. */
+export function siteOf(url: string): string | null {
+  const [host, ...path] = canonicalUrl(url)?.split("/") ?? [];
+  if (!host) return null;
+  const depth = MULTI_TENANT_HOSTS[host] ?? 0;
+  return [host, ...path.slice(0, depth)].join("/").toLowerCase();
 }
 
 export function dedupeResults(results: WebResult[]): WebResult[] {
@@ -127,8 +154,8 @@ export function groundCandidates(
   for (const { sourceIds, ...candidate } of extracted) {
     const sources = [...new Set(sourceIds)].map((id) => results[id]).filter(Boolean);
     if (sources.length === 0 || sources.length !== new Set(sourceIds).size) continue;
-    const host = hostOf(candidate.url);
-    if (!host || !sources.some((s) => hostOf(s.url) === host)) continue;
+    const site = siteOf(candidate.url);
+    if (!site || !sources.some((s) => siteOf(s.url) === site)) continue;
     out.push({
       ...candidate,
       evidence: sources.map((s) => ({
@@ -145,13 +172,29 @@ export function groundCandidates(
 export function rankCandidates(candidates: PartnerCandidate[]): PartnerCandidate[] {
   const best = new Map<string, PartnerCandidate>();
   for (const c of candidates) {
-    const host = hostOf(c.url)!;
-    const current = best.get(host);
-    if (!current || c.fitScore > current.fitScore) best.set(host, c);
+    const site = siteOf(c.url)!;
+    const current = best.get(site);
+    if (!current || c.fitScore > current.fitScore) best.set(site, c);
   }
   return [...best.values()]
     .sort((a, b) => b.fitScore - a.fitScore || a.communityName.localeCompare(b.communityName))
     .slice(0, MAX_CANDIDATES);
+}
+
+/** Valid candidates from raw model JSON whose overall shape failed validation. */
+export function salvageCandidates(text: string): ExtractedCandidate[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return [];
+  }
+  const items = (parsed as { candidates?: unknown } | null)?.candidates;
+  if (!Array.isArray(items)) return [];
+  return items.slice(0, 15).flatMap((item) => {
+    const result = extractedCandidateSchema.safeParse(item);
+    return result.success ? [result.data] : [];
+  });
 }
 
 // ---------- network-backed defaults ----------
@@ -163,7 +206,8 @@ function describeIntent(intent: EventIntent) {
     `Goal: ${intent.goal}`,
     `Format: ${intent.format}`,
     `City: ${intent.city}`,
-    `Date: ${intent.date_start.slice(0, 10)}`,
+    // Full timestamp: the database returns UTC, so a sliced date can be off by a day.
+    `Starts: ${intent.date_start}`,
     `Guests: ${intent.guest_count}`,
     `Sales boundary: ${intent.sales_boundary}`,
     `Partner criteria: ${intent.partner_criteria}`,
@@ -191,6 +235,8 @@ export function defaultDeps(abortSignal?: AbortSignal): SearchDeps {
     async search(query) {
       const apiKey = process.env.EXA_API_KEY;
       if (!apiKey) throw new Error("EXA_API_KEY is not set");
+      // exa-js takes no AbortSignal; at least skip queries started after a cancel.
+      abortSignal?.throwIfAborted();
       const { results } = await new Exa(apiKey).search(query, {
         type: "auto",
         numResults: 8,
@@ -207,7 +253,7 @@ export function defaultDeps(abortSignal?: AbortSignal): SearchDeps {
       const sources = results
         .map((r, i) => `[${i}] ${r.title}\n${r.url}\n${r.highlights.join(" … ").slice(0, 1200)}`)
         .join("\n\n");
-      const { output } = await generateText({
+      const request = generateText({
         model: MODEL,
         abortSignal,
         output: Output.object({
@@ -223,7 +269,16 @@ export function defaultDeps(abortSignal?: AbortSignal): SearchDeps {
           "suggestedOutreachAngle is one or two sentences on why this community would want to co-host.",
         prompt: `Event:\n${describeIntent(intent)}\n\nSearch results:\n${sources}`,
       });
-      return output.candidates;
+      try {
+        return (await request).output.candidates;
+      } catch (e) {
+        // One malformed candidate fails the whole object; keep the valid ones.
+        if (NoObjectGeneratedError.isInstance(e) && e.text) {
+          const salvaged = salvageCandidates(e.text);
+          if (salvaged.length > 0) return salvaged;
+        }
+        throw e;
+      }
     },
   };
 }

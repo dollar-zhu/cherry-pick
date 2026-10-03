@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { defaultDeps } from "../../src/lib/partners/search";
@@ -29,7 +28,7 @@ export default defineTool({
       userId: auth.principalId,
       // Stable across eve step replays of this call, so a retry never charges twice.
       // Session id + call id: call ids alone are not guaranteed unique across sessions.
-      searchId: ctx.callId ? `${ctx.session.id}:${ctx.callId}` : randomUUID(),
+      searchId: `${ctx.session.id}:${ctx.callId}`,
       store: createPartnerStore(createAdminClient()),
       deps: defaultDeps(ctx.abortSignal),
     });

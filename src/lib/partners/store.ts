@@ -33,10 +33,22 @@ const debitKey = (userId: string, searchId: string) => `partner_search:${userId}
 const refundKey = (userId: string, searchId: string) => `${debitKey(userId, searchId)}:refund`;
 
 export function createPartnerStore(db: SupabaseClient): PartnerStore {
+  // ponytail: client-side sum, paged past PostgREST's 1000-row cap; swap for a
+  // credit_balance() SQL function once SUP-16 provides one.
   async function balance(userId: string) {
-    const { data, error } = await db.from(T.ledger).select("amount").eq("user_id", userId);
-    if (error) throw error;
-    return (data ?? []).reduce((sum, row) => sum + Number(row.amount), 0);
+    const PAGE = 1000;
+    let sum = 0;
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await db
+        .from(T.ledger)
+        .select("amount")
+        .eq("user_id", userId)
+        .order("idempotency_key") // unique, so pages never overlap or skip
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      for (const row of data ?? []) sum += Number(row.amount);
+      if (!data || data.length < PAGE) return sum;
+    }
   }
 
   async function refund(userId: string, searchId: string, cost: number) {
@@ -163,8 +175,14 @@ export function createPartnerStore(db: SupabaseClient): PartnerStore {
 
         return { candidateIds: ids };
       } catch (e) {
-        await db.from(T.candidates).delete().eq("search_id", searchId).eq("user_id", userId);
-        await refund(userId, searchId, cost);
+        const cleanup = await db.from(T.candidates).delete().eq("search_id", searchId).eq("user_id", userId);
+        // Rows that survive cleanup are served by loadSearch on a retry, so keep the charge for them.
+        if (cleanup.error) throw new AggregateError([e, cleanup.error], `Saving search ${searchId} failed and cleanup failed`);
+        try {
+          await refund(userId, searchId, cost);
+        } catch (refundError) {
+          throw new AggregateError([e, refundError], `Saving search ${searchId} failed and the refund failed`);
+        }
         throw e;
       }
     },

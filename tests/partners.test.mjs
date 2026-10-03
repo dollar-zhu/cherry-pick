@@ -7,6 +7,7 @@ import {
   groundCandidates,
   normalizeQueries,
   rankCandidates,
+  salvageCandidates,
   searchCohostPartners,
 } from "../src/lib/partners/search.ts";
 import { runSearchCohostPartners, SEARCH_COST_CREDITS } from "../src/lib/partners/run.ts";
@@ -101,6 +102,27 @@ test("ranking keeps the best candidate per site, sorts by fit and caps at 10", (
   assert.equal(out.length, 10);
   assert.equal(out[0].url, "https://site13.com");
   assert.ok(out.every((c, i) => i === 0 || out[i - 1].fitScore >= c.fitScore));
+});
+
+test("separate groups on a shared platform are separate candidates, but not cross-grounded", () => {
+  const results = [result("https://www.meetup.com/berlin-saas/events/1"), result("https://meetup.com/saas-founders")];
+  const grounded = groundCandidates(
+    [
+      extracted("https://meetup.com/berlin-saas", 80, [0]),
+      extracted("https://meetup.com/saas-founders/", 70, [1]),
+      extracted("https://meetup.com/made-up-group", 90, [0]), // other group than the cited page
+    ],
+    results,
+  );
+  assert.deepEqual(rankCandidates(grounded).map((c) => c.fitScore), [80, 70]);
+});
+
+test("salvage keeps valid candidates from a partly malformed model reply", () => {
+  const good = extracted("https://saas-circle.de", 80, [0]);
+  const bad = { ...extracted("https://x.com/y", 70, [1]), fitReasons: [] };
+  assert.deepEqual(salvageCandidates(JSON.stringify({ candidates: [good, bad, "junk"] })), [good]);
+  assert.deepEqual(salvageCandidates("not json"), []);
+  assert.deepEqual(salvageCandidates(JSON.stringify({ other: 1 })), []);
 });
 
 // ---------- pipeline with fake network ----------
@@ -260,6 +282,27 @@ test("a save already recorded by a concurrent attempt returns the stored candida
   assert.deepEqual(res.data.candidates.map((c) => c.id), ["old-1"]);
 });
 
+test("a database error while loading reports failure and is audited", async () => {
+  const { store, calls } = fakeStore();
+  store.loadSearch = async () => { throw new Error("relation does not exist"); };
+  const original = console.error;
+  console.error = () => {};
+  try {
+    const res = await run(store);
+    assert.equal(res.status, "failed");
+    assert.equal(calls.audit[0].outcome, "failed");
+  } finally {
+    console.error = original;
+  }
+});
+
+test("a replayed call is audited without a second charge", async () => {
+  const { store, calls } = fakeStore({ saved: [savedCandidate] });
+  await run(store);
+  assert.equal(calls.audit[0].detail.creditsCharged, 0);
+  assert.equal(calls.audit[0].detail.replayed, true);
+});
+
 test("a failed save reports failure instead of throwing", async () => {
   const { store } = fakeStore({ record: () => { throw new Error("insert failed"); } });
   const original = console.error;
@@ -267,7 +310,7 @@ test("a failed save reports failure instead of throwing", async () => {
   try {
     const res = await run(store);
     assert.equal(res.status, "failed");
-    assert.match(res.summary, /refunded/);
+    assert.match(res.summary, /could not save/);
   } finally {
     console.error = original;
   }

@@ -66,7 +66,10 @@ export async function runSearchCohostPartners(input: {
     return response;
   };
 
-  const success = (candidates: SavedCandidate[], queries?: string[]) => {
+  const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+  /** `replayed`: the charge was made by an earlier attempt, so the audit must not count it again. */
+  const success = (candidates: SavedCandidate[], { queries, replayed = false }: { queries?: string[]; replayed?: boolean } = {}) => {
     const few = candidates.length < MIN_CANDIDATES;
     return respond({
       status: "success",
@@ -78,14 +81,25 @@ export async function runSearchCohostPartners(input: {
         "Pick the communities to contact, then prepare an outreach batch.",
       ],
       data: { searchId, creditsCharged: SEARCH_COST_CREDITS, candidates },
-    }, { queries, candidateCount: candidates.length, creditsCharged: SEARCH_COST_CREDITS });
+    }, { queries, candidateCount: candidates.length, creditsCharged: replayed ? 0 : SEARCH_COST_CREDITS, replayed });
   };
 
-  // A replayed call (crash after charging) returns the saved result: no new search, no new charge.
-  const previous = await store.loadSearch(searchId, userId);
-  if (previous) return success(previous);
+  let intent: EventIntent | null;
+  let balance: number;
+  try {
+    // A replayed call (crash after charging) returns the saved result: no new search, no new charge.
+    const previous = await store.loadSearch(searchId, userId);
+    if (previous) return success(previous, { replayed: true });
+    [intent, balance] = await Promise.all([store.loadIntent(eventId, userId), store.creditBalance(userId)]);
+  } catch (e) {
+    console.error("[search_cohost_partners] loading failed", e);
+    return respond({
+      status: "failed",
+      summary: "Could not load the event or credit balance. No credits were charged.",
+      nextActions: ["Try again in a minute."],
+    }, { error: errorMessage(e) });
+  }
 
-  const intent = await store.loadIntent(eventId, userId);
   if (!intent) {
     return respond({
       status: "failed",
@@ -94,7 +108,6 @@ export async function runSearchCohostPartners(input: {
     });
   }
 
-  const balance = await store.creditBalance(userId);
   if (balance < SEARCH_COST_CREDITS) {
     return respond({
       status: "blocked",
@@ -110,9 +123,10 @@ export async function runSearchCohostPartners(input: {
     console.error("[search_cohost_partners] search failed", e);
     return respond({
       status: "failed",
-      summary: "The partner search could not reach the web. No credits were charged.",
+      // Covers web search outages and query/extraction model failures alike.
+      summary: "The partner search failed. No credits were charged.",
       nextActions: ["Try again in a minute."],
-    }, { error: e instanceof Error ? e.message : String(e) });
+    }, { error: errorMessage(e) });
   }
 
   const { queries, candidates } = outcome;
@@ -131,9 +145,10 @@ export async function runSearchCohostPartners(input: {
     console.error("[search_cohost_partners] saving failed", e);
     return respond({
       status: "failed",
-      summary: "Found candidates but could not save them. Any charge was refunded.",
+      // recordSearch refunds on failure, but the refund itself can fail, so don't promise one.
+      summary: "Found candidates but could not save them.",
       nextActions: ["Try again in a minute."],
-    }, { queries, error: e instanceof Error ? e.message : String(e) });
+    }, { queries, error: errorMessage(e) });
   }
   if (saved === "insufficient_credits") {
     return respond({
@@ -144,10 +159,17 @@ export async function runSearchCohostPartners(input: {
   }
 
   if (saved === "already_recorded") {
-    const stored = await store.loadSearch(searchId, userId);
-    if (stored) return success(stored);
-    throw new Error(`Search ${searchId} is recorded but its candidates are missing`);
+    const stored = await store.loadSearch(searchId, userId).catch((e) => {
+      console.error("[search_cohost_partners] reloading failed", e);
+      return null;
+    });
+    if (stored) return success(stored, { queries, replayed: true });
+    return respond({
+      status: "failed",
+      summary: "This search was already saved, but its results could not be loaded.",
+      nextActions: ["Try again in a minute."],
+    }, { queries });
   }
 
-  return success(candidates.map((c, i) => ({ ...c, id: saved.candidateIds[i] })), queries);
+  return success(candidates.map((c, i) => ({ ...c, id: saved.candidateIds[i] })), { queries });
 }
