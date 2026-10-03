@@ -10,10 +10,6 @@ const SCAN = ["src/app", "src/components"];
 const EXEMPT = ["src/components/ui/", "src/components/brand/"];
 // Files not yet moved onto the design system. PR 2 removes entries as it migrates them.
 const PENDING = new Set([
-  "src/app/(app)/inbox/loading.tsx",
-  "src/app/(app)/inbox/page.tsx",
-  "src/app/(app)/inbox/respond-form.tsx",
-  "src/app/(app)/profile/profile-form.tsx",
   "src/app/agents/page.tsx",
   "src/app/approvals/[id]/decide-form.tsx",
   "src/app/approvals/[id]/page.tsx",

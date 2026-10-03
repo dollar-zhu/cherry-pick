@@ -5,10 +5,10 @@ import { AMENITIES, WEEKDAYS, type Profile } from "@/lib/contracts";
 import { saveProfile } from "./actions";
 
 const input =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-black";
+  "rounded-lg border border-border glass px-3 py-2 outline-none focus:border-ring";
 const label = "flex flex-col gap-1 text-sm";
 const legend = "mb-1 text-sm font-medium";
-const fieldset = "flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800";
+const fieldset = "glass rounded-lg flex flex-col gap-3 p-4";
 
 const pretty = (value: string) => value.replaceAll("_", " ");
 
@@ -26,7 +26,7 @@ function Checkboxes({
       {options.map((option) => (
         <label
           key={option.value}
-          className="flex items-center gap-2 rounded-full border border-zinc-300 px-3 py-1 text-sm has-checked:border-zinc-900 has-checked:bg-zinc-100 dark:border-zinc-700 dark:has-checked:border-zinc-100 dark:has-checked:bg-zinc-900"
+          className="flex items-center gap-2 rounded-full border border-border px-3 py-1 text-sm has-checked:border-ring has-checked:bg-foreground/10"
         >
           <input
             type="checkbox"
@@ -139,11 +139,11 @@ export function ProfileForm({ initial }: { initial: Partial<Profile> | null }) {
         </div>
       </fieldset>
 
-      {state.error && <p role="alert" className="text-sm text-red-600">{state.error}</p>}
+      {state.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-full bg-zinc-900 px-5 py-2 text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-black"
+        className="self-start rounded-full bg-primary px-5 py-2 text-primary-foreground disabled:opacity-50 hover:bg-primary/90"
       >
         {pending ? "Saving…" : "Save profile"}
       </button>
