@@ -31,7 +31,7 @@ export function DecideForm({ id }: { id: string }) {
           type="button"
           disabled={pending}
           onClick={() => submit("approved")}
-          className="rounded-full bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-black"
+          className="rounded-full bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50 hover:bg-primary/90"
         >
           Approve
         </button>
@@ -39,12 +39,12 @@ export function DecideForm({ id }: { id: string }) {
           type="button"
           disabled={pending}
           onClick={() => submit("rejected")}
-          className="rounded-full border border-zinc-300 px-4 py-2 text-sm disabled:opacity-50 dark:border-zinc-700"
+          className="rounded-full border border-border px-4 py-2 text-sm disabled:opacity-50 bg-secondary hover:bg-foreground/10"
         >
           Reject
         </button>
       </div>
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     </div>
   );
 }

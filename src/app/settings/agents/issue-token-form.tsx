@@ -17,20 +17,20 @@ export function IssueTokenForm() {
           required
           maxLength={80}
           placeholder="Claude Code on this laptop"
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-black"
+          className="rounded-field glass-inset px-3 py-2 outline-none focus:border-ring focus:outline-none"
         />
       </label>
       <button
         disabled={pending}
-        className="self-start rounded-full bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-black"
+        className="self-start rounded-full bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50 hover:bg-primary/90"
       >
         Create token
       </button>
-      {state?.error && <p role="alert" className="text-sm text-red-600">{state.error}</p>}
+      {state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
       {state?.token && (
         <div className="flex flex-col gap-2">
           <p className="text-sm">Copy this token now. It will not be shown again.</p>
-          <pre className="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs dark:border-zinc-800 dark:bg-zinc-950">
+          <pre className="overflow-x-auto rounded-field glass-inset p-3 font-mono text-xs">
             {state.token}
           </pre>
         </div>

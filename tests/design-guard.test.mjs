@@ -10,19 +10,10 @@ const SCAN = ["src/app", "src/components"];
 const EXEMPT = ["src/components/ui/", "src/components/brand/"];
 // Files not yet moved onto the design system. PR 2 removes entries as it migrates them.
 const PENDING = new Set([
-  "src/app/agents/page.tsx",
-  "src/app/approvals/[id]/decide-form.tsx",
-  "src/app/approvals/[id]/page.tsx",
-  "src/app/browse/apply-form.tsx",
-  "src/app/browse/page.tsx",
-  "src/app/settings/agents/issue-token-form.tsx",
-  "src/app/settings/agents/page.tsx",
-  "src/components/approvals/approval-card.tsx",
   "src/components/assistant/intake.tsx",
   "src/components/assistant/intent-card.tsx",
   "src/components/assistant/thread.tsx",
   "src/components/assistant/voice-chat.tsx",
-  "src/components/copy-block.tsx",
 ]);
 
 const PALETTE =

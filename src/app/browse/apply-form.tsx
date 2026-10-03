@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { applyToPostedEvent } from "./actions";
 
 const input =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-black";
+  "rounded-lg border border-border glass px-3 py-2 outline-none focus:border-ring";
 
 export function ApplyForm({ eventId }: { eventId: string }) {
   const router = useRouter();
@@ -43,13 +43,13 @@ export function ApplyForm({ eventId }: { eventId: string }) {
           type="button"
           onClick={apply}
           disabled={pending}
-          className="rounded-full bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-black"
+          className="rounded-full bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50 hover:bg-primary/90"
         >
           Apply to co-host
         </button>
       </div>
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
       )}

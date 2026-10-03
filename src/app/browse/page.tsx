@@ -29,17 +29,17 @@ export default async function BrowsePage() {
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-10 font-sans">
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">Events from other companies</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-muted-foreground">
           Apply to co-host. The host approves or rejects the application.
         </p>
       </div>
 
       {"error" in result ? (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-destructive">
           {result.error}
         </p>
       ) : result.events.length === 0 ? (
-        <p className="text-sm text-zinc-500">No upcoming events from other companies.</p>
+        <p className="text-sm text-muted-foreground">No upcoming events from other companies.</p>
       ) : (
         <ul className="flex flex-col gap-4">
           {result.events.map((event) => {
@@ -49,26 +49,26 @@ export default async function BrowsePage() {
             return (
               <li
                 key={event.id}
-                className="flex flex-col gap-3 rounded-xl border border-zinc-200 px-4 py-4 dark:border-zinc-800"
+                className="glass rounded-lg flex flex-col gap-3 px-4 py-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex flex-col gap-1">
                     <p className="font-medium">{event.title}</p>
-                    <p className="text-sm text-zinc-500">
+                    <p className="text-sm text-muted-foreground">
                       {event.host_name ? `Hosted by ${event.host_name}` : "Hosted by another company"}
                     </p>
-                    <p className="text-sm text-zinc-500">
+                    <p className="text-sm text-muted-foreground">
                       {event.city} · {event.dates_flexible ? "Flexible, " : ""}
                       {formatDate(event.date_start, event.timezone)} – {formatDate(event.date_end, event.timezone)}
                     </p>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    <p className="text-sm text-muted-foreground">
                       {event.topic} · {event.format} · {event.guest_count} guests
                     </p>
                   </div>
                   {status && <InviteStatusBadge status={status} />}
                 </div>
                 {status ? (
-                  <p className="text-sm text-zinc-500">
+                  <p className="text-sm text-muted-foreground">
                     {status === "applied" ? "Waiting on the host." : "You already have a request for this event."}
                   </p>
                 ) : (
