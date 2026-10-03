@@ -20,6 +20,9 @@ export default async function Home() {
       <header className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">Cherry Pick</h1>
         <div className="flex items-center gap-3 text-sm">
+          <Link href="/inbox" className="underline-offset-4 hover:underline">
+            Inbox
+          </Link>
           <Link href="/profile" className="underline-offset-4 hover:underline">
             {profile.name}
           </Link>
