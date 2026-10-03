@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "@/app/login/actions";
 import { createClient } from "@/lib/supabase/server";
@@ -32,9 +33,11 @@ export async function SiteNav() {
         aria-label="Main"
         className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6"
       >
-        <Link href="/" aria-label="Cherry Pick home" className="flex items-center gap-2 whitespace-nowrap text-ink">
-          <span aria-hidden className="size-3 rounded-full bg-brand min-[400px]:size-2.5" />
-          <span className="hidden font-display text-xl tracking-[-0.01em] min-[400px]:inline">Cherry Pick</span>
+        <Link href="/" className="flex shrink-0 items-center transition-opacity duration-[var(--dur-micro)] hover:opacity-80">
+          {/* Brand files: color logo on light paper, white logo on dark. The cherry alone on narrow phones. */}
+          <Image src="/brand/lockup-color.png" alt="cherrypick" width={1200} height={271} priority className="hidden h-7 w-auto min-[400px]:block dark:min-[400px]:hidden" />
+          <Image src="/brand/lockup-white.png" alt="cherrypick" width={1200} height={271} priority className="hidden h-7 w-auto dark:min-[400px]:block" />
+          <Image src="/brand/mark.png" alt="cherrypick" width={512} height={512} priority className="size-8 min-[400px]:hidden" />
         </Link>
         {account && (
           <div className="flex items-center gap-1.5 sm:gap-2">

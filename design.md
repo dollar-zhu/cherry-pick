@@ -18,6 +18,7 @@ The shadcn/ui names (`--primary`, `--muted`, `--accent`, `--border`, `--ring`, a
 
 - paper `oklch(98.6% 0.004 80)`, ink `oklch(21% 0.012 40)`, brand (cherry) `oklch(53% 0.2 22)`.
 - The brand colour is for the main action, waiting counts, and errors only.
+- Logo: `public/brand/` (from the team brand files). Color logo on light, white logo on dark, the cherry alone below 400 px and as the tab icon.
 - Event covers use `--cover-0` to `--cover-5`. The card's position in the grid picks one.
 
 ## Typography
