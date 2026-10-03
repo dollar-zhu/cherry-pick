@@ -13,6 +13,7 @@ const inboxRow = z.object({
   status: z.string(),
   note: z.string().nullable(),
   created_at: z.string(),
+  requested_by: z.enum(["host", "partner"]).default("host"),
   event_title: z.string(),
   event_city: z.string(),
   event_topic: z.string(),
@@ -53,6 +54,7 @@ export default async function InboxPage() {
           topic: parsed.data.event_topic,
           when: `${parsed.data.event_dates_flexible ? "Flexible, " : ""}${formatDate(parsed.data.event_date_start, parsed.data.event_timezone)} – ${formatDate(parsed.data.event_date_end, parsed.data.event_timezone)}`,
           host: parsed.data.host_name,
+          requestedBy: parsed.data.requested_by,
           createdAt: parsed.data.created_at,
         },
       ];
@@ -68,7 +70,7 @@ export default async function InboxPage() {
           Could not load invites.
         </p>
       ) : invites.length === 0 ? (
-        <p className="text-sm text-zinc-500">No invites yet</p>
+        <p className="text-sm text-zinc-500">No invites or applications yet</p>
       ) : (
         <ul className="flex flex-col gap-4">
           {invites.map((invite) => (
@@ -90,7 +92,12 @@ export default async function InboxPage() {
               {invite.note && (
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">Your note: {invite.note}</p>
               )}
-              {invite.status === "pending" && <RespondForm inviteId={invite.id} />}
+              {invite.status === "applied" && (
+                <p className="text-sm text-zinc-500">Waiting on the host.</p>
+              )}
+              {invite.status === "pending" && invite.requestedBy === "host" && (
+                <RespondForm inviteId={invite.id} />
+              )}
             </li>
           ))}
         </ul>

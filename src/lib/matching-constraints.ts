@@ -136,6 +136,30 @@ export function formatWeekdays(days: number[] | null): string {
  * Orders candidates by how many of their topics appear in the event text.
  * ponytail: word match only; rank the full set with the model if pools outgrow MATCH_LIMIT.
  */
+export type CohostCompany = {
+  id: string;
+  name: string;
+  city: string;
+  audience: string;
+  topics: string[];
+  description: string;
+  hasVenue: boolean;
+};
+
+export type RankedCohost = CohostCompany & { sharedTopics: string[] };
+
+/** Same-city companies, closest shared topics first. A company with no overlap still lists last. */
+export function rankCohosts(topics: string[], companies: CohostCompany[], limit = 8): RankedCohost[] {
+  return companies
+    .map((company) => {
+      const text = `${company.name} ${company.description} ${company.audience} ${company.topics.join(" ")}`;
+      const sharedTopics = topics.filter((topic) => topicOverlap([topic], text) > 0);
+      return { ...company, sharedTopics };
+    })
+    .sort((a, b) => b.sharedTopics.length - a.sharedTopics.length || a.name.localeCompare(b.name))
+    .slice(0, limit);
+}
+
 export function topicOverlap(topics: string[], eventText: string): number {
   return topics.filter((topic) => {
     const word = topic.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

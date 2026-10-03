@@ -43,6 +43,27 @@ export const Profile = z
 
 export type Profile = z.infer<typeof Profile>;
 
+const PROFILE_TEXT = ["name", "description", "city", "audience"] as const;
+
+/** Fields the intake must collect before creating an event or browsing co-hosts. */
+export function missingProfileFields(
+  profile: {
+    name?: string | null;
+    description?: string | null;
+    city?: string | null;
+    audience?: string | null;
+    topics?: string[] | null;
+  } | null,
+): string[] {
+  if (!profile) return [...PROFILE_TEXT, "topics"];
+  const missing: string[] = [];
+  for (const key of PROFILE_TEXT) {
+    if (!profile[key]?.trim()) missing.push(key);
+  }
+  if (!profile.topics?.some((topic) => topic.trim())) missing.push("topics");
+  return missing;
+}
+
 export function readProfileForm(formData: FormData) {
   const text = (key: string) => String(formData.get(key) ?? "").trim();
   const numberOrNull = (key: string) => (text(key) === "" ? null : Number(text(key)));

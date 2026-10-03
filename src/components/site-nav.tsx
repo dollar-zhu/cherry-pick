@@ -20,8 +20,10 @@ export async function SiteNav() {
         : 0;
       items = [
         { href: "/", label: "Events" },
+        { href: "/browse", label: "Browse" },
         { href: "/events/new", label: "Plan an event" },
         { href: "/inbox", label: "Inbox", badge: waiting },
+        { href: "/agents", label: "Agents" },
         { href: "/profile", label: profile?.name ?? "Profile" },
       ];
     }
