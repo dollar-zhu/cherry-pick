@@ -11,7 +11,7 @@ import {
 } from "ai";
 import { createClient } from "@/lib/supabase/server";
 import { AMENITIES } from "@/lib/contracts";
-import { CHAT_MAX_MESSAGE_CHARS, CHAT_MAX_MESSAGES, intentSchema } from "@/lib/intent";
+import { CHAT_MAX_MESSAGE_CHARS, CHAT_MAX_MESSAGES, intentSchema, isPast } from "@/lib/intent";
 
 export const maxDuration = 60;
 
@@ -25,7 +25,15 @@ const tools = {
       "This does not create the event; the user confirms it in the UI.",
     inputSchema: intentSchema,
     // No side effect: the event is created only when the user clicks Confirm.
-    execute: async () => ({ status: "awaiting_user_confirmation" as const }),
+    // Throwing sends the error to the model and hides the card (isError).
+    execute: async (intent) => {
+      if (isPast(intent)) {
+        throw new Error(
+          "The dates are in the past. Fixed dates must start in the future; a flexible window must end in the future.",
+        );
+      }
+      return { status: "awaiting_user_confirmation" as const };
+    },
   }),
 };
 
