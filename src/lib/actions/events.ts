@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { intentSchema } from "@/lib/intent";
+import { intentSchema, isPast } from "@/lib/intent";
 import { createClient } from "@/lib/supabase/server";
 
 const inputSchema = z.object({
@@ -22,8 +22,8 @@ export async function createEvent(input: unknown): Promise<CreateEventResult> {
   if (!parsed.success) return { error: "The event details are invalid. Ask the assistant to fix them." };
   const { intent, toolCallId } = parsed.data;
 
-  if (Date.parse(intent.date_start) <= Date.now()) {
-    return { error: "The event must start in the future." };
+  if (isPast(intent)) {
+    return { error: "The event dates are in the past. Ask the assistant to change them." };
   }
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return { error: "Sign in to create an event." };

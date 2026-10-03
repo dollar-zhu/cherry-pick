@@ -25,6 +25,11 @@ function isTimeZone(value: string) {
   }
 }
 
+/** Fixed dates must start in the future; a flexible window only needs to end there. */
+export function isPast(intent: { dates_flexible: boolean; date_start: string; date_end: string }) {
+  return Date.parse(intent.dates_flexible ? intent.date_end : intent.date_start) <= Date.now();
+}
+
 export const intentSchema = z
   .object({
     title: text(3, 120).describe("Short public name of the event"),
@@ -78,6 +83,10 @@ export const intentSchema = z
   .refine((intent) => Date.parse(intent.date_end) >= Date.parse(intent.date_start), {
     message: "date_end must be on or after date_start",
     path: ["date_end"],
+  })
+  .refine((intent) => !isPast(intent), {
+    message: "The event must be in the future: date_start for fixed dates, date_end for flexible dates",
+    path: ["date_start"],
   })
   .refine((intent) => intent.dates_flexible || intent.allowed_weekdays === null, {
     message: "allowed_weekdays is only for flexible dates; set it to null or set dates_flexible",
