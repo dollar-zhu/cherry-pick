@@ -1,7 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { intentSchema } from "../intent";
 import type { PublishStore } from "./approve";
-import { isOwnAsset, sha256Hex, type Approval, type Asset, type Party } from "./package";
+import {
+  isOwnAsset,
+  MAX_ASSETS,
+  MAX_ATTACHMENT_BYTES,
+  sha256Hex,
+  type Approval,
+  type Asset,
+  type Party,
+} from "./package";
 
 /**
  * Supabase implementation of PublishStore (SUP-25).
@@ -54,10 +62,39 @@ const assetSchema = {
 };
 
 export function createPublishStore(db: SupabaseClient): PublishStore {
-  async function download(path: string): Promise<Uint8Array> {
-    const { data, error } = await db.storage.from(ASSET_BUCKET).download(path);
+  /** Size from storage metadata, without downloading. Unknown sizes count as too large. */
+  async function sizeOf(path: string): Promise<number> {
+    const { data, error } = await db.storage.from(ASSET_BUCKET).info(path);
     if (error) throw error;
-    return new Uint8Array(await data.arrayBuffer());
+    return typeof data.size === "number" ? data.size : Number.POSITIVE_INFINITY;
+  }
+
+  /** Streams the file and aborts past `maxBytes`, so memory stays bounded even if metadata lies. */
+  async function download(path: string, maxBytes: number): Promise<Uint8Array> {
+    const { data, error } = await db.storage.from(ASSET_BUCKET).createSignedUrl(path, 60);
+    if (error) throw error;
+    const res = await fetch(data.signedUrl);
+    if (!res.ok || !res.body) throw new Error(`Download of ${path} failed (${res.status})`);
+    const reader = res.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel();
+        throw new Error(`${path} is larger than ${maxBytes} bytes`);
+      }
+      chunks.push(value);
+    }
+    const out = new Uint8Array(total);
+    let offset = 0;
+    for (const c of chunks) {
+      out.set(c, offset);
+      offset += c.byteLength;
+    }
+    return out;
   }
 
   return {
@@ -105,12 +142,23 @@ export function createPublishStore(db: SupabaseClient): PublishStore {
       const userParty: Party = memberOf.has(orgIds.company) ? "company" : "community";
 
       // Digest the current bytes: approvals are bound to file content, not just paths.
-      const assets: Asset[] = await Promise.all(
-        assetSchema.parse(pkg.assets, pkg.id as string).map(async (a) => {
-          const bytes = await download(a.storagePath);
-          return { ...a, sha256: sha256Hex(bytes), size: bytes.byteLength };
-        }),
-      );
+      // Sizes come from metadata first; nothing over the limits is downloaded.
+      const listed = assetSchema.parse(pkg.assets, pkg.id as string);
+      let assets: Asset[];
+      if (listed.length > MAX_ASSETS) {
+        // Too many files: approval is blocked on the count, so skip all I/O.
+        assets = listed.map((a) => ({ ...a, sha256: "", size: 0 }));
+      } else {
+        const sizes = await Promise.all(listed.map((a) => sizeOf(a.storagePath)));
+        const total = sizes.reduce((n, x) => n + x, 0);
+        assets = await Promise.all(
+          listed.map(async (a, i) => {
+            if (total > MAX_ATTACHMENT_BYTES) return { ...a, sha256: "", size: sizes[i] }; // blocked on size
+            const bytes = await download(a.storagePath, sizes[i]);
+            return { ...a, sha256: sha256Hex(bytes), size: bytes.byteLength };
+          }),
+        );
+      }
 
       const nameOf = (id: string) => (orgsRes.data ?? []).find((o) => o.id === id)?.name ?? "Co-host";
       return {
@@ -212,7 +260,7 @@ export function createPublishStore(db: SupabaseClient): PublishStore {
     },
 
     async fetchAssets(assets) {
-      return Promise.all(assets.map(async (asset) => ({ asset, bytes: await download(asset.storagePath) })));
+      return Promise.all(assets.map(async (asset) => ({ asset, bytes: await download(asset.storagePath, asset.size) })));
     },
 
     async audit({ userId, eventId, action, outcome, detail }) {

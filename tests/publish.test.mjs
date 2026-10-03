@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { approvePublish, publishStatus } from "../src/lib/publish/approve.ts";
-import { buildLumaPackage, contentHash, isOwnAsset, MAX_ATTACHMENT_BYTES, PACKAGE_SCHEMA, sha256Hex } from "../src/lib/publish/package.ts";
+import { buildLumaPackage, contentHash, isOwnAsset, MAX_ASSETS, MAX_ATTACHMENT_BYTES, PACKAGE_SCHEMA, sha256Hex } from "../src/lib/publish/package.ts";
 
 const FILES = { "lp1/v2/cover.png": Buffer.from("cover-bytes"), "lp1/v2/brief.pdf": Buffer.from("brief-bytes") };
 const file = (kind, storagePath, filename, contentType) => ({
@@ -206,6 +206,15 @@ test("assets over the email size limit are blocked before approval", async () =>
   const res = await approve(f);
   assert.equal(res.status, "blocked");
   assert.match(res.summary, /email limit/);
+  assert.equal(f.state.approvals.length, 0);
+});
+
+test("more files than the limit are blocked before approval", async () => {
+  const many = Array.from({ length: MAX_ASSETS + 1 }, (_, i) => ({ ...content().assets[1], storagePath: `lp1/f${i}.pdf` }));
+  const f = fakes({ ctx: { content: content({ assets: many }) } });
+  const res = await approve(f);
+  assert.equal(res.status, "blocked");
+  assert.match(res.summary, /limit is 10/);
   assert.equal(f.state.approvals.length, 0);
 });
 

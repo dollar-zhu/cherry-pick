@@ -3,6 +3,7 @@ import type { ToolResponse } from "../tool-response";
 import {
   buildLumaPackage,
   contentHash,
+  MAX_ASSETS,
   MAX_ATTACHMENT_BYTES,
   PARTIES,
   sha256Hex,
@@ -143,6 +144,13 @@ export async function approvePublish(input: {
     };
   }
 
+  if (ctx.content.assets.length > MAX_ASSETS) {
+    return {
+      status: "blocked",
+      summary: `The launch package has ${ctx.content.assets.length} files; the limit is ${MAX_ASSETS}.`,
+      nextActions: ["Remove some files, then approve again."],
+    };
+  }
   const totalBytes = ctx.content.assets.reduce((n, a) => n + a.size, 0);
   if (totalBytes > MAX_ATTACHMENT_BYTES) {
     return {

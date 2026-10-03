@@ -37,6 +37,7 @@ export type Asset = {
 
 /** AgentMail caps a request at 6 MB including base64 (4/3 larger), so keep raw files well under. */
 export const MAX_ATTACHMENT_BYTES = 4_000_000;
+export const MAX_ASSETS = 10;
 
 export const sha256Hex = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex");
 
