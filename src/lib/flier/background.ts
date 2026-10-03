@@ -46,11 +46,13 @@ export async function generateBackground(
       console.error("[flier background] no image returned", response.candidates?.[0]?.finishReason);
       return null;
     }
-    return {
-      bytes: new Uint8Array(Buffer.from(image.data, "base64")),
-      mimeType: image.mimeType ?? "image/png",
-      model,
-    };
+    // next/og (Satori) draws PNG and JPEG only.
+    const mimeType = image.mimeType ?? "image/png";
+    if (mimeType !== "image/png" && mimeType !== "image/jpeg") {
+      console.error("[flier background] unsupported image type", mimeType);
+      return null;
+    }
+    return { bytes: new Uint8Array(Buffer.from(image.data, "base64")), mimeType, model };
   } catch (error) {
     console.error("[flier background]", error);
     return null;

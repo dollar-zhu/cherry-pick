@@ -47,6 +47,16 @@ const UNIQUE_VIOLATION = "23505";
  * always spelled right. If the image model fails, the vibe's gradient is used instead.
  */
 export async function generateFlier(eventId: string, request: FlierRequest): Promise<FlierActionResult> {
+  try {
+    return await buildFlier(eventId, request);
+  } catch (error) {
+    // e.g. an invalid events.timezone in Intl; return a result so the panel never hangs.
+    console.error("[generateFlier]", error);
+    return { status: "error", message: "Could not make the flier. Please try again." };
+  }
+}
+
+async function buildFlier(eventId: string, request: FlierRequest): Promise<FlierActionResult> {
   const id = z.string().uuid().safeParse(eventId);
   const parsed = requestSchema.safeParse(request);
   if (!id.success || !parsed.success) {
@@ -134,6 +144,10 @@ export async function generateFlier(eventId: string, request: FlierRequest): Pro
         ? await generateBackground(refinePrompt(req.instruction, style.layout), previousBackground)
         : // The last version fell back to a gradient: start over, steered by the instruction.
           await generateBackground(`${backgroundPrompt(style, event.format)} Also: ${req.instruction}.`);
+      // Don't trade a good image for the plain gradient; keep the current version instead.
+      if (!background && previousBackground) {
+        return { status: "error", message: "Could not refine the background right now. Please try again." };
+      }
     } else {
       // Same background and layout (its calm area matches), new fonts.
       style = pickStyle(event.format, Math.random, { vibe: previousStyle!.vibe, layout: previousStyle!.layout }, previousStyle!);
@@ -152,10 +166,13 @@ export async function generateFlier(eventId: string, request: FlierRequest): Pro
 
   const version = (latest?.version ?? 0) + 1;
   const bucket = supabase.storage.from(FLIER_BUCKET);
-  const storagePath = `${event.id}/v${version}.png`;
+  // Random file names: a save that fails after an upload leaves an orphan file instead of
+  // blocking this version number forever. The (event_id, version) key still catches races.
+  const fileId = crypto.randomUUID();
+  const storagePath = `${event.id}/${fileId}.png`;
 
   if (background && !backgroundPath) {
-    backgroundPath = `${event.id}/v${version}-background.${extension(background.mimeType)}`;
+    backgroundPath = `${event.id}/${fileId}-background.${extension(background.mimeType)}`;
     const upload = await bucket.upload(backgroundPath, background.bytes, { contentType: background.mimeType });
     if (upload.error) return uploadFailed(upload.error);
   }
@@ -208,16 +225,10 @@ async function downloadBackground(
 }
 
 function extension(mimeType: string) {
-  if (mimeType === "image/png") return "png";
-  if (mimeType === "image/webp") return "webp";
-  return "jpg";
+  return mimeType === "image/png" ? "png" : "jpg";
 }
 
 function uploadFailed(error: { message: string }): FlierActionResult {
   console.error("[generateFlier upload]", error);
-  // Same path already taken: another version was created concurrently.
-  if (/exists|duplicate/i.test(error.message)) {
-    return { status: "error", message: "Another flier was just created. Reload and try again." };
-  }
   return { status: "error", message: "Could not save the flier. Please try again." };
 }

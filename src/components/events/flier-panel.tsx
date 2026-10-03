@@ -26,7 +26,11 @@ export function FlierPanel({ eventId, initial, loadError }: Props) {
     setError(null);
     setRunning(request.mode);
     startTransition(async () => {
-      const result = await generateFlier(eventId, request);
+      // A network error or function timeout throws instead of returning a result.
+      const result = await generateFlier(eventId, request).catch(() => ({
+        status: "error" as const,
+        message: "The request timed out or failed. Please try again.",
+      }));
       setRunning(null);
       if (result.status === "error") {
         setError(result.message);
