@@ -20,7 +20,7 @@ const Text: TextMessagePartComponent = ({ text }) => (
 function UserMessage() {
   return (
     <MessagePrimitive.Root className="flex justify-end">
-      <div className="max-w-[80%] rounded-2xl bg-zinc-900 px-4 py-2 text-white dark:bg-zinc-100 dark:text-black">
+      <div className="max-w-[80%] rounded-2xl bg-brand-gradient-text px-4 py-2 text-primary">
         <MessagePrimitive.Parts components={{ Text }} />
       </div>
     </MessagePrimitive.Root>
@@ -37,7 +37,7 @@ function AssistantMessage() {
         }}
       />
       <MessagePrimitive.Error>
-        <ErrorPrimitive.Root role="alert" className="text-sm text-red-600">
+        <ErrorPrimitive.Root role="alert" className="text-sm text-destructive">
           <ErrorPrimitive.Message />
         </ErrorPrimitive.Root>
       </MessagePrimitive.Error>
@@ -54,7 +54,7 @@ export function Thread() {
       <ThreadPrimitive.Root className="flex w-full flex-1 flex-col">
         <ThreadPrimitive.Viewport className="flex flex-1 flex-col gap-6 overflow-y-auto">
           <AuiIf condition={(s) => s.thread.isEmpty}>
-            <p className="text-zinc-500">
+            <p className="text-muted-foreground">
               Describe the event you want to host: what it&apos;s about, where, when, how many
               guests, and your budget.
             </p>
@@ -64,21 +64,21 @@ export function Thread() {
             {({ message }) => (message.role === "user" ? <UserMessage /> : <AssistantMessage />)}
           </ThreadPrimitive.Messages>
 
-          <ThreadPrimitive.ViewportFooter className="sticky bottom-0 mt-auto bg-background pb-6 pt-2">
+          <ThreadPrimitive.ViewportFooter className="sticky bottom-0 mt-auto bg-background/70 pb-6 pt-2 backdrop-blur-md">
             <ComposerPrimitive.Root className="flex gap-2">
               <ComposerPrimitive.Input
                 autoFocus
                 maxLength={CHAT_MAX_MESSAGE_CHARS}
                 placeholder="Plan a dinner for 20 founders in Berlin…"
-                className="flex-1 resize-none rounded-2xl border border-zinc-300 bg-white px-4 py-2 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-black"
+                className="flex-1 resize-none rounded-2xl glass-inset px-4 py-2 outline-none focus:border-ring"
               />
               <AuiIf condition={(s) => !s.thread.isRunning}>
-                <ComposerPrimitive.Send className="rounded-full bg-zinc-900 px-4 py-2 text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-black">
+                <ComposerPrimitive.Send className="rounded-full bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50 hover:bg-primary/90">
                   Send
                 </ComposerPrimitive.Send>
               </AuiIf>
               <AuiIf condition={(s) => s.thread.isRunning}>
-                <ComposerPrimitive.Cancel className="rounded-full border border-zinc-300 px-4 py-2 dark:border-zinc-700">
+                <ComposerPrimitive.Cancel className="rounded-full border border-border bg-secondary px-4 py-2 hover:bg-foreground/10">
                   Stop
                 </ComposerPrimitive.Cancel>
               </AuiIf>

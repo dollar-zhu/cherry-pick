@@ -80,34 +80,34 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       <h1 className="text-2xl font-semibold tracking-tight">{event.title}</h1>
 
       <dl className="grid grid-cols-[8rem_1fr] gap-2 text-sm">
-        <dt className="text-zinc-500">Topic</dt>
+        <dt className="text-muted-foreground">Topic</dt>
         <dd>{event.topic}</dd>
-        <dt className="text-zinc-500">Goal</dt>
+        <dt className="text-muted-foreground">Goal</dt>
         <dd>{event.goal}</dd>
-        <dt className="text-zinc-500">Format</dt>
+        <dt className="text-muted-foreground">Format</dt>
         <dd>{event.format}</dd>
-        <dt className="text-zinc-500">City</dt>
+        <dt className="text-muted-foreground">City</dt>
         <dd>{event.city}</dd>
-        <dt className="text-zinc-500">When</dt>
+        <dt className="text-muted-foreground">When</dt>
         <dd>
           {dateFormat.format(new Date(event.date_start))} –{" "}
           {dateFormat.format(new Date(event.date_end))}
         </dd>
         {event.dates_flexible && (
           <>
-            <dt className="text-zinc-500">Weekdays</dt>
+            <dt className="text-muted-foreground">Weekdays</dt>
             <dd>{event.allowed_weekdays ? formatWeekdays(event.allowed_weekdays) : "Any"} (flexible dates)</dd>
           </>
         )}
-        <dt className="text-zinc-500">Venue</dt>
+        <dt className="text-muted-foreground">Venue</dt>
         <dd>
           {event.needs_venue
             ? `A partner provides it${event.required_amenities.length ? `; must have ${event.required_amenities.join(", ")}` : ""}`
             : "Not needed"}
         </dd>
-        <dt className="text-zinc-500">Guests</dt>
+        <dt className="text-muted-foreground">Guests</dt>
         <dd>{event.guest_count}</dd>
-        <dt className="text-zinc-500">Budget cap</dt>
+        <dt className="text-muted-foreground">Budget cap</dt>
         <dd>{formatBudget(event.budget_cap_cents, event.currency, "en")}</dd>
       </dl>
 
@@ -117,7 +117,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
           <FindMatchesButton eventId={id} />
         </div>
         {candidateError ? (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-destructive">
             Saved matches could not be loaded. Reload the page or click Find matches.
           </p>
         ) : (
@@ -128,7 +128,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold">Invites</h2>
         {inviteError ? (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-destructive">
             Could not load invites.
           </p>
         ) : (
@@ -139,7 +139,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold">Approval queue</h2>
         {inviteError ? (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-destructive">
             Could not load invites.
           </p>
         ) : (

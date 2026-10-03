@@ -66,34 +66,34 @@ export default async function InboxPage() {
       <h1 className="text-2xl font-semibold tracking-tight">Inbox</h1>
 
       {error ? (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-destructive">
           Could not load invites.
         </p>
       ) : invites.length === 0 ? (
-        <p className="text-sm text-zinc-500">No invites or applications yet</p>
+        <p className="text-sm text-muted-foreground">No invites or applications yet</p>
       ) : (
         <ul className="flex flex-col gap-4">
           {invites.map((invite) => (
             <li
               key={invite.id}
-              className="flex flex-col gap-3 rounded-xl border border-zinc-200 px-4 py-4 dark:border-zinc-800"
+              className="glass rounded-lg flex flex-col gap-3 px-4 py-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex flex-col gap-1">
                   <p className="font-medium">{invite.title}</p>
-                  {invite.host && <p className="text-sm text-zinc-500">From {invite.host}</p>}
-                  <p className="text-sm text-zinc-500">
+                  {invite.host && <p className="text-sm text-muted-foreground">From {invite.host}</p>}
+                  <p className="text-sm text-muted-foreground">
                     {invite.city} · {invite.when}
                   </p>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">{invite.topic}</p>
+                  <p className="text-sm text-muted-foreground">{invite.topic}</p>
                 </div>
                 <InviteStatusBadge status={invite.status} />
               </div>
               {invite.note && (
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">Your note: {invite.note}</p>
+                <p className="text-sm text-muted-foreground">Your note: {invite.note}</p>
               )}
               {invite.status === "applied" && (
-                <p className="text-sm text-zinc-500">Waiting on the host.</p>
+                <p className="text-sm text-muted-foreground">Waiting on the host.</p>
               )}
               {invite.status === "pending" && invite.requestedBy === "host" && (
                 <RespondForm inviteId={invite.id} />

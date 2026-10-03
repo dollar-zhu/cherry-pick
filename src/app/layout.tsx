@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { RouteGlow } from "@/components/brand/route-glow";
 import { SiteNav } from "@/components/site-nav";
 
 const geistSans = Geist({
@@ -25,8 +26,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`dark ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <RouteGlow />
         <SiteNav />
-        {children}
+        <div className="above-glow flex flex-1 flex-col">{children}</div>
       </body>
     </html>
   );

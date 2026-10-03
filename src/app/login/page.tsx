@@ -12,14 +12,13 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   if (user) redirect(nextPath ?? (await getPostAuthPath(user.id)));
 
   return (
-    <main className="flex min-h-svh flex-1 items-center justify-center bg-muted/40 px-4 py-12">
+    <main className="flex flex-1 flex-col items-center px-4 pt-[10vh] pb-[30vh]">
       <div className="w-full max-w-md">
-        <div className="mb-6 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Cherry Pick
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight">Find your next co-host</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+        <div className="mb-8 text-center">
+          <h1 className="text-display text-balance">
+            Find your next <span className="text-brand-orange">co-host</span>
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground">
             Sign in or create an account to get started.
           </p>
         </div>

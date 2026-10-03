@@ -25,7 +25,7 @@ export default async function ApprovalPage({ params }: PageProps<"/approvals/[id
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-10 font-sans">
       <h1 className="text-2xl font-semibold tracking-tight">Approval</h1>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-muted-foreground">
         This is the exact action an agent asked for. Approving records your decision and runs the action when that tool is connected. Rejecting stops it.
       </p>
       <ApprovalCard
@@ -43,7 +43,7 @@ export default async function ApprovalPage({ params }: PageProps<"/approvals/[id
       />
       {data.status === "pending" && <DecideForm id={id} />}
       {data.status === "approved" && (
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-muted-foreground">
           Approved. Nothing else runs until the tool that requested this is connected.
         </p>
       )}

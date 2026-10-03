@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { signOut } from "@/app/login/actions";
+import { Logo } from "@/components/brand/logo";
+import { buttonVariants } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { NavLinks, type NavItem } from "./nav-links";
 
@@ -21,7 +23,6 @@ export async function SiteNav() {
       items = [
         { href: "/", label: "Events" },
         { href: "/browse", label: "Browse" },
-        { href: "/events/new", label: "Plan an event" },
         { href: "/inbox", label: "Inbox", badge: waiting },
         { href: "/agents", label: "Agents" },
         { href: "/profile", label: profile?.name ?? "Profile" },
@@ -30,23 +31,28 @@ export async function SiteNav() {
   }
 
   return (
-    <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-black/80">
+    <header className="sticky top-3 z-10 px-4">
       <nav
         aria-label="Main"
-        className="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-6 py-3 font-sans text-sm"
+        className="glass mx-auto flex w-full max-w-5xl items-center gap-3 rounded-full py-1.5 pr-1.5 pl-4 font-sans text-sm"
       >
-        <Link href="/" className="text-base font-semibold tracking-tight">
-          Cherry Pick
+        <Link href="/" aria-label="cherrypick home" className="shrink-0">
+          <Logo height={20} />
         </Link>
         {items && (
-          <div className="flex flex-wrap items-center gap-1">
-            <NavLinks items={items} />
+          <>
+            <div className="mx-auto">
+              <NavLinks items={items} />
+            </div>
+            <Link href="/events/new" className={buttonVariants({ variant: "brand", size: "sm" })}>
+              + New event
+            </Link>
             <form action={signOut}>
-              <button className="rounded-full px-3 py-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100">
+              <button className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                 Sign out
               </button>
             </form>
-          </div>
+          </>
         )}
       </nav>
     </header>

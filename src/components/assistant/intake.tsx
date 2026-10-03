@@ -6,7 +6,7 @@ import { Thread } from "./thread";
 
 const VoiceChat = dynamic(() => import("./voice-chat").then((mod) => mod.VoiceChat), {
   ssr: false,
-  loading: () => <p className="text-sm text-zinc-500">Loading voice chat…</p>,
+  loading: () => <p className="text-sm text-muted-foreground">Loading voice chat…</p>,
 });
 
 export function Intake() {
@@ -17,7 +17,7 @@ export function Intake() {
       <div
         role="tablist"
         aria-label="How to plan"
-        className="flex w-fit gap-1 rounded-full bg-zinc-100 p-1 text-sm dark:bg-zinc-900"
+        className="flex w-fit gap-1 rounded-full bg-muted p-1 text-sm"
       >
         <Tab selected={mode === "chat"} onClick={() => setMode("chat")}>
           Chat
@@ -48,8 +48,8 @@ function Tab({
       onClick={onClick}
       className={
         selected
-          ? "rounded-full bg-white px-3 py-1 dark:bg-zinc-800"
-          : "rounded-full px-3 py-1 text-zinc-500"
+          ? "rounded-full bg-foreground/15 px-3 py-1 text-foreground"
+          : "rounded-full px-3 py-1 text-muted-foreground"
       }
     >
       {children}

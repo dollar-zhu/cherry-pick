@@ -9,40 +9,10 @@ const SCAN = ["src/app", "src/components"];
 // Kit and brand components may hold literal colors; everything else uses tokens.
 const EXEMPT = ["src/components/ui/", "src/components/brand/"];
 // Files not yet moved onto the design system. PR 2 removes entries as it migrates them.
-const PENDING = new Set([
-  "src/app/(app)/events/[id]/find-matches-button.tsx",
-  "src/app/(app)/events/[id]/loading.tsx",
-  "src/app/(app)/events/[id]/page.tsx",
-  "src/app/(app)/inbox/loading.tsx",
-  "src/app/(app)/inbox/page.tsx",
-  "src/app/(app)/inbox/respond-form.tsx",
-  "src/app/(app)/page.tsx",
-  "src/app/(app)/profile/profile-form.tsx",
-  "src/app/agents/page.tsx",
-  "src/app/approvals/[id]/decide-form.tsx",
-  "src/app/approvals/[id]/page.tsx",
-  "src/app/browse/apply-form.tsx",
-  "src/app/browse/page.tsx",
-  "src/app/oauth/consent/page.tsx",
-  "src/app/settings/agents/issue-token-form.tsx",
-  "src/app/settings/agents/page.tsx",
-  "src/components/approvals/approval-card.tsx",
-  "src/components/assistant/intake.tsx",
-  "src/components/assistant/intent-card.tsx",
-  "src/components/assistant/thread.tsx",
-  "src/components/assistant/voice-chat.tsx",
-  "src/components/copy-block.tsx",
-  "src/components/events/approval-queue.tsx",
-  "src/components/events/incoming-applications.tsx",
-  "src/components/events/invite-list.tsx",
-  "src/components/events/invite-status.tsx",
-  "src/components/events/matches-table.tsx",
-  "src/components/nav-links.tsx",
-  "src/components/site-nav.tsx",
-]);
+const PENDING = new Set([]);
 
 const PALETTE =
-  /\b(?:bg|text|border|ring|from|via|to|fill|stroke|outline|divide|placeholder|shadow|decoration|accent|caret)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/;
+  /\b(?:bg|text|border|ring|from|via|to|fill|stroke|outline|divide|placeholder|shadow|decoration|accent|caret)-(?:(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}|(?:black|white)(?![\w-]))/;
 const HEX = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})\b/;
 
 function* sourceFiles(dir) {
@@ -75,6 +45,11 @@ test("detector catches raw colors and ignores tokens", () => {
   assert.equal(rawColors('<p className="bg-destructive/10 text-success">').length, 0);
   assert.equal(rawColors('<a href="#details">').length, 0);
   assert.equal(rawColors("// was text-zinc-500, see #123").length, 0);
+  assert.equal(rawColors('<div className="bg-white p-4">').length, 1);
+  assert.equal(rawColors('<p className="text-black">').length, 1);
+  assert.equal(rawColors('<dialog className="backdrop:bg-black/40">').length, 1);
+  assert.equal(rawColors('<p className="bg-white/95">').length, 1);
+  assert.equal(rawColors('<p className="text-primary-foreground bg-foreground/20">').length, 0);
 });
 
 test("pages and components use design tokens, not raw colors", () => {
@@ -93,5 +68,36 @@ test("every pending file still exists and still has raw colors (else remove it f
   for (const path of PENDING) {
     assert.ok(existsSync(join(ROOT, path)), `${path} no longer exists`);
     assert.ok(rawColors(readFileSync(join(ROOT, path), "utf8")).length > 0, `${path} is clean, remove it from PENDING`);
+  }
+});
+
+test("every page is on the design system (PENDING is empty)", () => {
+  assert.equal(PENDING.size, 0, `still pending: ${[...PENDING].join(", ")}`);
+});
+
+test("hand-made text fields use glass-inset, not the panel glass", () => {
+  // The panel `glass` on a field matches the card it sits in and adds a drop shadow.
+  const offenders = [];
+  for (const dir of SCAN) {
+    for (const full of sourceFiles(join(ROOT, dir))) {
+      const path = rel(full);
+      if (EXEMPT.some((e) => path.startsWith(e))) continue;
+      const src = readFileSync(full, "utf8");
+      const fieldClasses = [
+        ...src.matchAll(/const \w*[iI]nput\w* =\s*"([^"]*)"/g),
+        ...src.matchAll(/<(?:input|textarea|select)\b[^>]*className="([^"]*)"/g),
+      ].map((m) => m[1]);
+      for (const cls of fieldClasses) if (/(^|\s)glass(\s|$)/.test(cls)) offenders.push(`${path}: ${cls}`);
+    }
+  }
+  assert.deepEqual(offenders, []);
+});
+
+test("sticky chat footers don't paint an opaque block over the glow", () => {
+  for (const path of ["src/components/assistant/thread.tsx", "src/components/assistant/voice-chat.tsx"]) {
+    const src = readFileSync(join(ROOT, path), "utf8");
+    for (const m of src.matchAll(/className="([^"]*\bsticky bottom-0\b[^"]*)"/g)) {
+      assert.doesNotMatch(m[1], /(^|\s)bg-background(\s|$)/, `${path}: ${m[1]}`);
+    }
   }
 });
