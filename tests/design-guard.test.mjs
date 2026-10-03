@@ -23,7 +23,6 @@ const PENDING = new Set([
   "src/app/approvals/[id]/page.tsx",
   "src/app/browse/apply-form.tsx",
   "src/app/browse/page.tsx",
-  "src/app/oauth/consent/page.tsx",
   "src/app/settings/agents/issue-token-form.tsx",
   "src/app/settings/agents/page.tsx",
   "src/components/approvals/approval-card.tsx",
