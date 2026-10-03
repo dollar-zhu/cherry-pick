@@ -1,17 +1,30 @@
 import Link from "next/link";
+import { IncomingApplications } from "@/components/events/incoming-applications";
+import { listApplications } from "@/lib/cohost";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Home() {
   // The (app) layout already sends signed-out users and users with no profile away.
   const supabase = await createClient();
   // RLS returns only the signed-in user's events.
-  const { data: events } = await supabase
-    .from("events")
-    .select("id, title, city, date_start, timezone")
-    .order("date_start", { ascending: true });
+  const [{ data: events }, applications] = await Promise.all([
+    supabase
+      .from("events")
+      .select("id, title, city, date_start, timezone")
+      .order("date_start", { ascending: true }),
+    listApplications(supabase),
+  ]);
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-10 font-sans">
+      {"error" in applications ? (
+        <p role="alert" className="text-sm text-red-600">
+          Could not load applications.
+        </p>
+      ) : (
+        <IncomingApplications rows={applications.applications} />
+      )}
+
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">Your events</h1>
         <Link

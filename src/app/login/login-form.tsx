@@ -16,7 +16,7 @@ import { authenticate, type AuthActionState } from "./actions";
 
 const initialState: AuthActionState = { message: null, kind: null };
 
-export function LoginForm() {
+export function LoginForm({ nextPath }: { nextPath?: string }) {
   const [state, action, pending] = useActionState(authenticate, initialState);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const signingUp = mode === "signup";
@@ -34,6 +34,7 @@ export function LoginForm() {
       <CardContent>
         <form action={action} className="grid gap-5">
           <input type="hidden" name="mode" value={mode} />
+          {nextPath ? <input type="hidden" name="next" value={nextPath} /> : null}
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
