@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { intentSchema } from "../intent";
 import type { PublishStore } from "./approve";
-import { isOwnAsset, type Approval, type Asset, type Party } from "./package";
+import { isOwnAsset, sha256Hex, type Approval, type Asset, type Party } from "./package";
 
 /**
  * Supabase implementation of PublishStore (SUP-25).
@@ -29,13 +29,12 @@ const T = {
   audit: "audit_log",
 } as const;
 const ASSET_BUCKET = "launch-assets";
-const SIGNED_URL_SECONDS = 60 * 60; // the mail provider fetches attachments at send time
 const STALE_SENDING_MS = 10 * 60 * 1000;
 const UNIQUE_VIOLATION = "23505";
 
 const assetSchema = {
   /** Valid assets under the package's own folder; anything else is dropped. */
-  parse(raw: unknown, launchPackageId: string): Asset[] {
+  parse(raw: unknown, launchPackageId: string): Omit<Asset, "sha256" | "size">[] {
     if (!Array.isArray(raw)) return [];
     return raw.flatMap((a) => {
       const r = a as Record<string, unknown>;
@@ -55,6 +54,12 @@ const assetSchema = {
 };
 
 export function createPublishStore(db: SupabaseClient): PublishStore {
+  async function download(path: string): Promise<Uint8Array> {
+    const { data, error } = await db.storage.from(ASSET_BUCKET).download(path);
+    if (error) throw error;
+    return new Uint8Array(await data.arrayBuffer());
+  }
+
   return {
     async loadContext(launchPackageId, userId) {
       const { data: pkg, error } = await db
@@ -99,6 +104,14 @@ export function createPublishStore(db: SupabaseClient): PublishStore {
       // A member of both organizations acts for the company side.
       const userParty: Party = memberOf.has(orgIds.company) ? "company" : "community";
 
+      // Digest the current bytes: approvals are bound to file content, not just paths.
+      const assets: Asset[] = await Promise.all(
+        assetSchema.parse(pkg.assets, pkg.id as string).map(async (a) => {
+          const bytes = await download(a.storagePath);
+          return { ...a, sha256: sha256Hex(bytes), size: bytes.byteLength };
+        }),
+      );
+
       const nameOf = (id: string) => (orgsRes.data ?? []).find((o) => o.id === id)?.name ?? "Co-host";
       return {
         eventId: pkg.event_id as string,
@@ -110,7 +123,7 @@ export function createPublishStore(db: SupabaseClient): PublishStore {
           lumaDescription: pkg.luma_description as string,
           linkedinCopy: (pkg.linkedin_copy as string | null) ?? null,
           xCopy: (pkg.x_copy as string | null) ?? null,
-          assets: assetSchema.parse(pkg.assets, pkg.id as string),
+          assets,
         },
         cohosts: { company: nameOf(orgIds.company), community: nameOf(orgIds.community) },
         charterLocked: charter.status === "locked",
@@ -198,16 +211,8 @@ export function createPublishStore(db: SupabaseClient): PublishStore {
       if (error) throw error;
     },
 
-    async signAssets(assets) {
-      return Promise.all(
-        assets.map(async (asset) => {
-          const { data, error } = await db.storage
-            .from(ASSET_BUCKET)
-            .createSignedUrl(asset.storagePath, SIGNED_URL_SECONDS, { download: asset.filename });
-          if (error) throw error;
-          return { asset, url: data.signedUrl };
-        }),
-      );
+    async fetchAssets(assets) {
+      return Promise.all(assets.map(async (asset) => ({ asset, bytes: await download(asset.storagePath) })));
     },
 
     async audit({ userId, eventId, action, outcome, detail }) {

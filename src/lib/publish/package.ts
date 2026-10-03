@@ -31,7 +31,14 @@ export type Asset = {
   storagePath: string; // object path in Supabase Storage
   filename: string;
   contentType: string;
+  sha256: string; // digest of the file's bytes: approvals cover the content, not just the path
+  size: number; // bytes
 };
+
+/** AgentMail caps a request at 6 MB including base64 (4/3 larger), so keep raw files well under. */
+export const MAX_ATTACHMENT_BYTES = 4_000_000;
+
+export const sha256Hex = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex");
 
 export type LaunchContent = {
   launchPackageId: string;
@@ -62,7 +69,7 @@ export type LumaPackage = {
   };
   social: { linkedin: string | null; x: string | null };
   cohosts: Record<Party, string>;
-  attachments: { filename: string; kind: Asset["kind"]; contentType: string }[];
+  attachments: { filename: string; kind: Asset["kind"]; contentType: string; sha256: string }[];
   approvals: Approval[];
   instructions: string;
 };
@@ -106,9 +113,9 @@ export function contentHash(
     },
     social: { linkedin: content.linkedinCopy, x: content.xCopy },
     cohosts,
-    assets: content.assets.map((a) => [a.kind, a.storagePath, a.contentType]),
+    assets: content.assets.map((a) => [a.kind, a.storagePath, a.filename, a.contentType, a.sha256]),
   };
-  return createHash("sha256").update(canonical(approved)).digest("hex");
+  return sha256Hex(canonical(approved));
 }
 
 export function buildLumaPackage(input: {
@@ -137,7 +144,7 @@ export function buildLumaPackage(input: {
     },
     social: { linkedin: content.linkedinCopy, x: content.xCopy },
     cohosts,
-    attachments: content.assets.map((a) => ({ filename: a.filename, kind: a.kind, contentType: a.contentType })),
+    attachments: content.assets.map((a) => ({ filename: a.filename, kind: a.kind, contentType: a.contentType, sha256: a.sha256 })),
     approvals: [...approvals].sort((a, b) => a.party.localeCompare(b.party)),
     instructions:
       "Create the event in Luma from these fields and upload the cover image. " +

@@ -3,7 +3,9 @@ import type { ToolResponse } from "../tool-response";
 import {
   buildLumaPackage,
   contentHash,
+  MAX_ATTACHMENT_BYTES,
   PARTIES,
+  sha256Hex,
   type Approval,
   type Asset,
   type LaunchContent,
@@ -47,8 +49,8 @@ export interface PublishStore {
     hash: string,
     result: { status: "sent"; agentmailMessageId: string } | { status: "failed"; error: string },
   ): Promise<void>;
-  /** Short-lived download URLs the mail provider fetches attachments from. */
-  signAssets(assets: Asset[]): Promise<{ asset: Asset; url: string }[]>;
+  /** Current bytes of each asset, downloaded at send time. */
+  fetchAssets(assets: Asset[]): Promise<{ asset: Asset; bytes: Uint8Array }[]>;
   audit(entry: {
     userId: string;
     eventId: string | null;
@@ -64,7 +66,7 @@ export interface PackageMailer {
       to: string;
       subject: string;
       text: string;
-      attachments: ({ filename: string; contentType: string } & ({ content: string } | { url: string }))[];
+      attachments: { filename: string; contentType: string; content: string }[]; // content: base64
     },
     idempotencyKey: string,
   ): Promise<{ messageId: string }>;
@@ -141,6 +143,15 @@ export async function approvePublish(input: {
     };
   }
 
+  const totalBytes = ctx.content.assets.reduce((n, a) => n + a.size, 0);
+  if (totalBytes > MAX_ATTACHMENT_BYTES) {
+    return {
+      status: "blocked",
+      summary: `The launch assets total ${(totalBytes / 1e6).toFixed(1)} MB; the email limit is ${MAX_ATTACHMENT_BYTES / 1e6} MB.`,
+      nextActions: ["Use smaller images or fewer documents, then approve again."],
+    };
+  }
+
   const hash = contentHash(ctx.intent, ctx.content, ctx.cohosts, ctx.organizerEmail);
   if (hash !== input.expectedHash) {
     return {
@@ -187,7 +198,13 @@ export async function approvePublish(input: {
   const approvalTrail = pkg.approvals;
 
   try {
-    const signed = await store.signAssets(ctx.content.assets);
+    // Attach the verified bytes, not links: what was approved is exactly what is sent.
+    const files = await store.fetchAssets(ctx.content.assets);
+    for (const { asset, bytes } of files) {
+      if (sha256Hex(bytes) !== asset.sha256) {
+        throw new Error(`Asset ${asset.storagePath} changed after it was approved`);
+      }
+    }
     const { messageId } = await mailer.send(
       {
         to: ctx.organizerEmail,
@@ -209,7 +226,11 @@ export async function approvePublish(input: {
             contentType: "application/json",
             content: Buffer.from(JSON.stringify(pkg, null, 2)).toString("base64"),
           },
-          ...signed.map(({ asset, url }) => ({ filename: asset.filename, contentType: asset.contentType, url })),
+          ...files.map(({ asset, bytes }) => ({
+            filename: asset.filename,
+            contentType: asset.contentType,
+            content: Buffer.from(bytes).toString("base64"),
+          })),
         ],
       },
       `publish:${launchPackageId}:${hash}`,

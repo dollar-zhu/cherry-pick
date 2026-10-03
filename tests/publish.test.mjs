@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { approvePublish, publishStatus } from "../src/lib/publish/approve.ts";
-import { buildLumaPackage, contentHash, isOwnAsset, PACKAGE_SCHEMA } from "../src/lib/publish/package.ts";
+import { buildLumaPackage, contentHash, isOwnAsset, MAX_ATTACHMENT_BYTES, PACKAGE_SCHEMA, sha256Hex } from "../src/lib/publish/package.ts";
+
+const FILES = { "lp1/v2/cover.png": Buffer.from("cover-bytes"), "lp1/v2/brief.pdf": Buffer.from("brief-bytes") };
+const file = (kind, storagePath, filename, contentType) => ({
+  kind, storagePath, filename, contentType, sha256: sha256Hex(FILES[storagePath]), size: FILES[storagePath].length,
+});
 
 const intent = {
   title: "Berlin Founders Dinner",
@@ -26,8 +31,8 @@ const content = (overrides = {}) => ({
   linkedinCopy: "Join us",
   xCopy: "Join us!",
   assets: [
-    { kind: "cover_image", storagePath: "lp1/v2/cover.png", filename: "cover.png", contentType: "image/png" },
-    { kind: "document", storagePath: "lp1/v2/brief.pdf", filename: "brief.pdf", contentType: "application/pdf" },
+    file("cover_image", "lp1/v2/cover.png", "cover.png", "image/png"),
+    file("document", "lp1/v2/brief.pdf", "brief.pdf", "application/pdf"),
   ],
   ...overrides,
 });
@@ -63,6 +68,10 @@ test("the fingerprint is stable and changes when anything approved changes", () 
   assert.notEqual(contentHash(intent, content(), cohosts, "attacker@example.com"), base);
   const newImage = content().assets.map((a, i) => (i === 0 ? { ...a, storagePath: "lp1/v3/cover.png" } : a));
   assert.notEqual(contentHash(intent, content({ assets: newImage }), cohosts, ORGANIZER), base);
+  const samePathNewBytes = content().assets.map((a, i) => (i === 0 ? { ...a, sha256: sha256Hex("other image") } : a));
+  assert.notEqual(contentHash(intent, content({ assets: samePathNewBytes }), cohosts, ORGANIZER), base);
+  const renamed = content().assets.map((a, i) => (i === 0 ? { ...a, filename: "invoice.png" } : a));
+  assert.notEqual(contentHash(intent, content({ assets: renamed }), cohosts, ORGANIZER), base);
 });
 
 test("only assets inside the package's own folder are accepted", () => {
@@ -75,7 +84,7 @@ test("only assets inside the package's own folder are accepted", () => {
 
 // ---------- approval gate ----------
 
-function fakes({ ctx = {}, approvals = [], job = null, failSend = false } = {}) {
+function fakes({ ctx = {}, approvals = [], job = null, failSend = false, files = FILES } = {}) {
   const state = { approvals: [...approvals], job, sends: [], audits: [], finished: [] };
   const context = {
     eventId: "e1",
@@ -103,7 +112,7 @@ function fakes({ ctx = {}, approvals = [], job = null, failSend = false } = {}) 
     },
     jobStatus: async () => state.job,
     finishJob: async (_id, _hash, result) => { state.job = result.status; state.finished.push(result); },
-    signAssets: async (assets) => assets.map((asset) => ({ asset, url: `https://signed/${asset.storagePath}` })),
+    fetchAssets: async (assets) => assets.map((asset) => ({ asset, bytes: files[asset.storagePath] })),
     audit: async (e) => { state.audits.push(e); },
   };
   const mailer = {
@@ -141,7 +150,8 @@ test("the second approval sends the package once, with JSON and every asset atta
   const pkg = JSON.parse(Buffer.from(message.attachments[0].content, "base64").toString());
   assert.equal(pkg.contentHash, HASH);
   assert.deepEqual(pkg.approvals.map((a) => a.party), ["community", "company"]);
-  assert.equal(message.attachments[1].url, "https://signed/lp1/v2/cover.png");
+  assert.equal(Buffer.from(message.attachments[1].content, "base64").toString(), "cover-bytes");
+  assert.equal(pkg.attachments[0].sha256, sha256Hex(FILES["lp1/v2/cover.png"]));
 
   const job = f.state.audits.find((a) => a.action === "publish_job");
   assert.equal(job.outcome, "sent");
@@ -170,6 +180,33 @@ test("approvals for an older version do not count after the content changes", as
   assert.equal(res.status, "pending_approval");
   assert.deepEqual(res.data.waitingFor, ["company"]);
   assert.equal(f.state.sends.length, 0);
+});
+
+test("a file swapped at the same path after approval stops the send", async () => {
+  const f = fakes({
+    ctx: { userParty: "community" },
+    approvals: [{ hash: HASH, party: "company", approvedBy: "u1", approvedAt: "t" }],
+    files: { ...FILES, "lp1/v2/cover.png": Buffer.from("unapproved image") },
+  });
+  const original = console.error;
+  console.error = () => {};
+  try {
+    const res = await approve(f, "u2");
+    assert.equal(res.status, "failed");
+    assert.equal(f.state.sends.length, 0);
+    assert.match(f.state.audits.find((a) => a.action === "publish_job").detail.error, /changed after it was approved/);
+  } finally {
+    console.error = original;
+  }
+});
+
+test("assets over the email size limit are blocked before approval", async () => {
+  const big = content().assets.map((a, i) => (i === 0 ? { ...a, size: MAX_ATTACHMENT_BYTES + 1 } : a));
+  const f = fakes({ ctx: { content: content({ assets: big }) } });
+  const res = await approve(f);
+  assert.equal(res.status, "blocked");
+  assert.match(res.summary, /email limit/);
+  assert.equal(f.state.approvals.length, 0);
 });
 
 test("changing the organizer email voids earlier approvals", async () => {
