@@ -8,6 +8,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|eve/|api/stripe/webhook|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|eve/|api/stripe/webhook|api/agentmail/webhook|api/unsubscribe|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
