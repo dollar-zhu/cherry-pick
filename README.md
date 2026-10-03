@@ -21,6 +21,9 @@ npm install
 npm run dev                  # starts Next.js and the eve agent together
 ```
 
+Database: in the Supabase SQL editor, run each file in `supabase/migrations/` in number order, then `supabase/seed.sql`.
+For the demo, turn off **Authentication → Sign In / Providers → Email → Confirm email**.
+
 Forward Stripe webhooks locally:
 
 ```bash
