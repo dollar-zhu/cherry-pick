@@ -8,6 +8,11 @@ import { MatchesTable, type MatchRow } from "@/components/events/matches-table";
 import { ApprovalQueue, type ApprovalRow } from "@/components/events/approval-queue";
 import { InviteList, type InviteListRow } from "@/components/events/invite-list";
 import { isInviteStatus, type InviteStatus } from "@/components/events/invite-status";
+import { FlierPanel } from "@/components/events/flier-panel";
+import { flierFileName, loadLatestFlier } from "@/lib/flier/store";
+
+// Flier generation (a server action on this page) waits on the image model.
+export const maxDuration = 60;
 
 export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   const { id } = await params;
@@ -57,6 +62,18 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
     .order("created_at", { ascending: false });
   if (inviteError) console.error("[event invites]", inviteError);
 
+  // Emails of approved co-hosts, so the host can reach them after approval.
+  const { data: contactRows, error: contactError } = await supabase.rpc("event_cohost_contacts", {
+    p_event_id: id,
+  });
+  if (contactError) console.error("[event contacts]", contactError);
+  const contactEmail = new Map(
+    (Array.isArray(contactRows) ? contactRows : []).map((row: { invite_id: string; email: string | null }) => [
+      row.invite_id,
+      row.email,
+    ]),
+  );
+
   const invites: InviteListRow[] = [];
   const awaitingDecision: ApprovalRow[] = [];
   const inviteStatus: Record<string, InviteStatus> = {};
@@ -69,11 +86,14 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       isDemo: profile?.is_demo ?? false,
       status: row.status,
       note: (row.note as string | null) ?? null,
+      email: contactEmail.get(row.id as string) ?? null,
     };
     invites.push(invite);
     inviteStatus[row.profile_id as string] = row.status;
     if (row.status === "accepted" || row.status === "applied") awaitingDecision.push(invite);
   }
+
+  const latestFlier = await loadLatestFlier(supabase, id, flierFileName(event.title));
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-10 font-sans">
@@ -145,6 +165,11 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         ) : (
           <ApprovalQueue rows={awaitingDecision} />
         )}
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold">Flier</h2>
+        <FlierPanel eventId={id} initial={latestFlier.flier} loadError={latestFlier.error} />
       </section>
     </main>
   );

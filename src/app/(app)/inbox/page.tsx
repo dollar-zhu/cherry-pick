@@ -22,6 +22,8 @@ const inboxRow = z.object({
   event_timezone: z.string(),
   event_dates_flexible: z.boolean(),
   host_name: z.string().nullable(),
+  // Only set once the host approves (0010_cohost_contacts.sql).
+  host_email: z.string().nullable().default(null),
 });
 
 export default async function InboxPage() {
@@ -54,6 +56,7 @@ export default async function InboxPage() {
           topic: parsed.data.event_topic,
           when: `${parsed.data.event_dates_flexible ? "Flexible, " : ""}${formatDate(parsed.data.event_date_start, parsed.data.event_timezone)} – ${formatDate(parsed.data.event_date_end, parsed.data.event_timezone)}`,
           host: parsed.data.host_name,
+          hostEmail: parsed.data.host_email,
           requestedBy: parsed.data.requested_by,
           createdAt: parsed.data.created_at,
         },
@@ -91,6 +94,22 @@ export default async function InboxPage() {
               </div>
               {invite.note && (
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">Your note: {invite.note}</p>
+              )}
+              {invite.status === "approved" && (
+                <p className="text-sm">
+                  You are a confirmed co-host.{" "}
+                  {invite.hostEmail ? (
+                    <>
+                      Contact the host at{" "}
+                      <a href={`mailto:${invite.hostEmail}`} className="underline">
+                        {invite.hostEmail}
+                      </a>
+                      .
+                    </>
+                  ) : (
+                    "The host has no contact email on file."
+                  )}
+                </p>
               )}
               {invite.status === "applied" && (
                 <p className="text-sm text-zinc-500">Waiting on the host.</p>

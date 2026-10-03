@@ -48,6 +48,7 @@ export function deriveReadiness(state: ReadinessState): ToolResponse {
   let stage = "intent";
   if (state.pendingApprovals.length > 0) stage = "awaiting_approval";
   else if (waitingOnHost > 0) stage = "reviewing_partners";
+  else if (state.invites.approved > 0) stage = "partners_confirmed";
   else if (inviteTotal > 0) stage = "outreach";
   else if (state.candidateCount > 0) stage = "matched";
 
@@ -69,6 +70,15 @@ export function deriveReadiness(state: ReadinessState): ToolResponse {
     ].filter(Boolean);
     blockers.push(`${waiting.join(" and ")} waiting on you.`);
     nextActions.push(`Approve or reject them on ${state.eventUrl}.`);
+  } else if (stage === "partners_confirmed") {
+    const n = state.invites.approved;
+    nextActions.push(
+      `${n} co-host${n === 1 ? " is" : "s are"} confirmed. Their contact emails are on ${state.eventUrl}.`,
+      "Make the event flier with generate_flier.",
+    );
+    if (state.invites.pending > 0) {
+      nextActions.push(`${state.invites.pending} invite${state.invites.pending === 1 ? " is" : "s are"} still open.`);
+    }
   }
 
   for (const approval of state.pendingApprovals) {

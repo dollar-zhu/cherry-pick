@@ -6,6 +6,7 @@ import { browseCohostOpportunitiesTool } from "@/lib/mcp/tools/browse-cohost-opp
 import { browsePostedEventsTool } from "@/lib/mcp/tools/browse-posted-events";
 import { createEventIntentTool } from "@/lib/mcp/tools/create-event-intent";
 import { decideCohostTool } from "@/lib/mcp/tools/decide-cohost";
+import { generateFlierTool } from "@/lib/mcp/tools/generate-flier";
 import { getApprovalStatusTool } from "@/lib/mcp/tools/get-approval-status";
 import { getEventReadinessTool } from "@/lib/mcp/tools/get-event-readiness";
 import { reviewApplicationsTool } from "@/lib/mcp/tools/review-applications";
@@ -22,6 +23,7 @@ export const MCP_TOOLS = [
   decideCohostTool,
   browseCohostOpportunitiesTool,
   getEventReadinessTool,
+  generateFlierTool,
   getApprovalStatusTool,
 ];
 
