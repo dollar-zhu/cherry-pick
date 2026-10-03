@@ -28,6 +28,10 @@ const T = {
 
 const UNIQUE_VIOLATION = "23505";
 
+// Ledger keys are scoped to the user: another user's search can never satisfy this user's debit.
+const debitKey = (userId: string, searchId: string) => `partner_search:${userId}:${searchId}`;
+const refundKey = (userId: string, searchId: string) => `${debitKey(userId, searchId)}:refund`;
+
 export function createPartnerStore(db: SupabaseClient): PartnerStore {
   async function balance(userId: string) {
     const { data, error } = await db.from(T.ledger).select("amount").eq("user_id", userId);
@@ -40,7 +44,7 @@ export function createPartnerStore(db: SupabaseClient): PartnerStore {
       user_id: userId,
       amount: cost,
       operation: "partner_search_refund",
-      idempotency_key: `${searchId}:refund`,
+      idempotency_key: refundKey(userId, searchId),
       ref: searchId,
     });
     if (error && error.code !== UNIQUE_VIOLATION) throw error;
@@ -95,7 +99,7 @@ export function createPartnerStore(db: SupabaseClient): PartnerStore {
         user_id: userId,
         amount: -cost,
         operation: "partner_search",
-        idempotency_key: searchId,
+        idempotency_key: debitKey(userId, searchId),
         ref: eventId,
       });
       if (debit.error && debit.error.code !== UNIQUE_VIOLATION) throw debit.error;
@@ -105,13 +109,15 @@ export function createPartnerStore(db: SupabaseClient): PartnerStore {
         const { count, error } = await db
           .from(T.candidates)
           .select("id", { count: "exact", head: true })
-          .eq("search_id", searchId);
+          .eq("search_id", searchId)
+          .eq("user_id", userId);
         if (error) throw error;
         if (count) return "already_recorded";
         const refunded = await db
           .from(T.ledger)
           .select("idempotency_key")
-          .eq("idempotency_key", `${searchId}:refund`)
+          .eq("idempotency_key", refundKey(userId, searchId))
+          .eq("user_id", userId)
           .maybeSingle();
         if (refunded.error) throw refunded.error;
         if (refunded.data) throw new Error(`Search ${searchId} was refunded by an earlier attempt`);
@@ -157,7 +163,7 @@ export function createPartnerStore(db: SupabaseClient): PartnerStore {
 
         return { candidateIds: ids };
       } catch (e) {
-        await db.from(T.candidates).delete().eq("search_id", searchId);
+        await db.from(T.candidates).delete().eq("search_id", searchId).eq("user_id", userId);
         await refund(userId, searchId, cost);
         throw e;
       }

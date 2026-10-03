@@ -28,7 +28,8 @@ export default defineTool({
       eventId,
       userId: auth.principalId,
       // Stable across eve step replays of this call, so a retry never charges twice.
-      searchId: ctx.callId ?? randomUUID(),
+      // Session id + call id: call ids alone are not guaranteed unique across sessions.
+      searchId: ctx.callId ? `${ctx.session.id}:${ctx.callId}` : randomUUID(),
       store: createPartnerStore(createAdminClient()),
       deps: defaultDeps(ctx.abortSignal),
     });
