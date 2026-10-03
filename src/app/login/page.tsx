@@ -1,54 +1,27 @@
-"use client";
+import { redirect } from "next/navigation";
+import { getAuthenticatedUser, getPostAuthPath } from "@/lib/auth";
+import { LoginForm } from "./login-form";
 
-import { useActionState } from "react";
-import { authenticate } from "./actions";
+export const dynamic = "force-dynamic";
 
-const input =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-black";
-const button = "flex-1 rounded-full px-4 py-2 disabled:opacity-50";
-
-export default function LoginPage() {
-  const [message, action, pending] = useActionState(authenticate, null);
+export default async function LoginPage() {
+  const user = await getAuthenticatedUser();
+  if (user) redirect(await getPostAuthPath(user.id));
 
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-6 py-10 font-sans">
-      <h1 className="text-2xl font-semibold tracking-tight">Cherry Pick</h1>
-      <form action={action} className="flex flex-col gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          Email
-          <input name="email" type="email" required autoComplete="email" className={input} />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Password
-          <input
-            name="password"
-            type="password"
-            required
-            minLength={6}
-            autoComplete="current-password"
-            className={input}
-          />
-        </label>
-        {message && <p role="alert" className="text-sm text-red-600">{message}</p>}
-        <div className="flex gap-2">
-          <button
-            name="mode"
-            value="signin"
-            disabled={pending}
-            className={`${button} bg-zinc-900 text-white dark:bg-zinc-100 dark:text-black`}
-          >
-            Sign in
-          </button>
-          <button
-            name="mode"
-            value="signup"
-            disabled={pending}
-            className={`${button} border border-zinc-300 dark:border-zinc-700`}
-          >
-            Create account
-          </button>
+    <main className="flex min-h-svh flex-1 items-center justify-center bg-muted/40 px-4 py-12">
+      <div className="w-full max-w-md">
+        <div className="mb-6 text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Cherry Pick
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight">Find your next co-host</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Sign in or create an account to get started.
+          </p>
         </div>
-      </form>
+        <LoginForm />
+      </div>
     </main>
   );
 }

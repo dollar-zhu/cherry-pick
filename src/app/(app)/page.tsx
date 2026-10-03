@@ -1,19 +1,9 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Home() {
+  // The (app) layout already sends signed-out users and users with no profile away.
   const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getClaims();
-  if (!auth?.claims) redirect("/login");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("name")
-    .eq("user_id", auth.claims.sub)
-    .maybeSingle();
-  if (!profile) redirect("/profile");
-
   // RLS returns only the signed-in user's events.
   const { data: events } = await supabase
     .from("events")
