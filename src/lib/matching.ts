@@ -1,6 +1,13 @@
 import { generateObject } from "ai";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import {
+  cityMatches,
+  formatList,
+  formatWeekdays,
+  matchesHardConstraints,
+  type ConstraintEvent,
+} from "@/lib/matching-constraints";
 
 export type CandidateProfile = {
   id: string;
@@ -12,45 +19,50 @@ export type CandidateProfile = {
   has_venue: boolean;
   venue_capacity: number | null;
   is_seeking_partners: boolean;
+  amenities: string[] | null;
+  available_weekdays: number[] | null;
+  available_from: string | null;
+  available_to: string | null;
 };
 
 const PROFILE_COLS =
-  "id, name, city, description, audience, topics, has_venue, venue_capacity, is_seeking_partners";
+  "id, name, city, description, audience, topics, has_venue, venue_capacity, is_seeking_partners, amenities, available_weekdays, available_from, available_to";
+
+const MATCH_LIMIT = 50;
+
+export type PrefilterEvent = ConstraintEvent & { owner_id: string };
 
 /**
- * SQL prefilter: up to 50 profiles from the directory, excluding the event
- * owner's own profile. Tries city-match first; retries without city if empty.
+ * Directory prefilter. Drops the owner's profile and anyone who fails the hard
+ * constraints, prefers the event city, and returns at most 50 names.
+ * Throws if the directory query fails, so the caller does not treat an error
+ * as an empty result and wipe saved matches.
  */
-export async function prefilter(eventId: string): Promise<CandidateProfile[]> {
+export async function prefilter(event: PrefilterEvent): Promise<CandidateProfile[]> {
   const supabase = await createClient();
 
-  const { data: event } = await supabase
-    .from("events")
-    .select("city, owner_id")
-    .eq("id", eventId)
-    .maybeSingle();
-
-  if (!event) return [];
-
-  const { city, owner_id } = event;
-
-  const { data: ownProfile } = await supabase
+  const { data: ownProfile, error: ownError } = await supabase
     .from("profiles")
     .select("id")
-    .eq("user_id", owner_id)
+    .eq("user_id", event.owner_id)
     .maybeSingle();
+  if (ownError) throw ownError;
 
-  async function run(withCity: boolean): Promise<CandidateProfile[]> {
-    let q = supabase.from("profiles").select(PROFILE_COLS).limit(50);
-    if (ownProfile) q = q.neq("id", ownProfile.id);
-    if (withCity) q = q.ilike("city", `%${city}%`);
-    const { data } = await q;
-    return (data as CandidateProfile[] | null) ?? [];
-  }
+  let query = supabase
+    .from("profiles")
+    .select(PROFILE_COLS)
+    .eq("is_seeking_partners", true)
+    .order("name");
+  if (ownProfile) query = query.neq("id", ownProfile.id);
 
-  const withCity = await run(true);
-  if (withCity.length > 0) return withCity;
-  return run(false);
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const rows = ((data as CandidateProfile[] | null) ?? []).filter((profile) =>
+    matchesHardConstraints(profile, event),
+  );
+  const inCity = rows.filter((profile) => cityMatches(profile.city, event.city));
+  return (inCity.length > 0 ? inCity : rows).slice(0, MATCH_LIMIT);
 }
 
 const rankingSchema = z.object({
@@ -63,19 +75,24 @@ const rankingSchema = z.object({
   ),
 });
 
+export type RankEvent = {
+  title: string;
+  topic: string;
+  goal: string;
+  partner_criteria: string;
+  city: string;
+  guest_count: number;
+  date_start: string;
+  date_end: string;
+};
+
 /**
  * Asks the model to score and explain each prefiltered profile as a co-host.
  * Returns results validated against the prefilter ID set.
  * Throws on model failure / timeout (caller falls back to prefilter order).
  */
 export async function rank(
-  event: {
-    title: string;
-    topic: string;
-    goal: string;
-    partner_criteria: string;
-    city: string;
-  },
+  event: RankEvent,
   candidates: CandidateProfile[],
 ): Promise<Array<{ profileId: string; score: number; reasons: string[] }>> {
   const { object } = await generateObject({
@@ -89,15 +106,18 @@ Topic: ${event.topic}
 Goal: ${event.goal}
 Partner criteria: ${event.partner_criteria}
 City: ${event.city}
+Guests: ${event.guest_count}
+When: ${event.date_start} to ${event.date_end}
 
-Score each organization on a scale of 0–10 as a co-host fit, and provide 1–3 short reasons.
-Only include profile IDs from the list below. Rank the strongest fits highest.
+Organizations that are not seeking partners, are too small for the guest count, or are unavailable on these dates have already been removed.
+Score each remaining organization on a scale of 0–10 as a co-host fit, and provide 1–3 short reasons.
+Only include profile IDs from the list below. Include each ID at most once. Rank the strongest fits highest.
 
 Candidates:
 ${candidates
   .map(
     (p) =>
-      `ID: ${p.id} | ${p.name} | ${p.city} | Audience: ${p.audience} | Topics: ${p.topics.join(", ")} | Has venue: ${p.has_venue}${p.venue_capacity ? ` (${p.venue_capacity} cap)` : ""} | Seeking: ${p.is_seeking_partners} | ${p.description}`,
+      `ID: ${p.id} | ${p.name} | ${p.city} | Audience: ${p.audience} | Topics: ${p.topics.join(", ")} | Has venue: ${p.has_venue}${p.venue_capacity ? ` (${p.venue_capacity} cap)` : ""} | Amenities: ${formatList(p.amenities)} | Available days: ${formatWeekdays(p.available_weekdays)} | Available: ${p.available_from ?? "unknown"} to ${p.available_to ?? "unknown"} | ${p.description}`,
   )
   .join("\n")}`,
   });

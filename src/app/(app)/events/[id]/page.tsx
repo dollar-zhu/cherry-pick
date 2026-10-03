@@ -69,7 +69,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
           <h2 className="text-lg font-semibold">Co-host matches</h2>
           <FindMatchesButton eventId={id} />
         </div>
-        <MatchesTable eventId={id} rows={candidates} />
+        <MatchesTable rows={candidates} />
       </section>
     </main>
   );

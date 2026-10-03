@@ -10,7 +10,7 @@ export function FindMatchesButton({ eventId }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<
-    { kind: "error"; message: string } | { kind: "ranking_failed" } | null
+    { kind: "error"; message: string } | { kind: "ranking_failed" } | { kind: "empty" } | null
   >(null);
 
   function run() {
@@ -19,13 +19,15 @@ export function FindMatchesButton({ eventId }: Props) {
       const result = await findMatches(eventId);
       if (result.status === "error") {
         setFeedback({ kind: "error", message: result.message });
-      } else {
-        if (result.status === "ok" && result.rankingFailed) {
-          setFeedback({ kind: "ranking_failed" });
-        }
-        // Refresh server-rendered candidates without a full navigation.
-        router.refresh();
+        return;
       }
+      if (result.status === "empty") {
+        setFeedback({ kind: "empty" });
+      } else if (result.rankingFailed) {
+        setFeedback({ kind: "ranking_failed" });
+      }
+      // Refresh server-rendered candidates without a full navigation.
+      router.refresh();
     });
   }
 
@@ -46,6 +48,11 @@ export function FindMatchesButton({ eventId }: Props) {
           </p>
         )}
       </div>
+      {feedback?.kind === "empty" && (
+        <p role="status" className="text-sm text-zinc-600 dark:text-zinc-400">
+          No organizations matched these constraints.
+        </p>
+      )}
       {feedback?.kind === "ranking_failed" && (
         <p
           role="alert"
