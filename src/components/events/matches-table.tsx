@@ -5,8 +5,9 @@ export type MatchRow = {
   profileId: string;
   profileName: string;
   profileCity: string;
-  score: number;
+  score: number | null; // null = passed the filters, not ranked
   reasons: string[];
+  openQuestions: string[];
 };
 
 type Props = {
@@ -46,7 +47,7 @@ export function MatchesTable({ rows }: Props) {
               <td className="px-4 py-3 font-medium">{row.profileName}</td>
               <td className="px-4 py-3 text-zinc-500">{row.profileCity}</td>
               <td className="px-4 py-3">
-                {row.score > 0 ? (
+                {row.score != null ? (
                   <span className="font-mono">{row.score.toFixed(1)}</span>
                 ) : (
                   <span className="text-zinc-400">—</span>
@@ -60,7 +61,14 @@ export function MatchesTable({ rows }: Props) {
                     ))}
                   </ul>
                 ) : (
-                  <span className="text-zinc-400">—</span>
+                  <span className="text-zinc-400">Not ranked</span>
+                )}
+                {row.openQuestions.length > 0 && (
+                  <ul className="mt-1 list-inside list-disc space-y-0.5 text-amber-700 dark:text-amber-400">
+                    {row.openQuestions.map((question, index) => (
+                      <li key={`q-${index}-${question}`}>{question}</li>
+                    ))}
+                  </ul>
                 )}
               </td>
             </tr>

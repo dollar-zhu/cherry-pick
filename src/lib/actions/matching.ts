@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { dedupeRankings } from "@/lib/matching-constraints";
-import { prefilter, rank } from "@/lib/matching";
+import { prefilter, rank, type Ranking } from "@/lib/matching";
 
 export type FindMatchesResult =
   | { status: "ok"; count: number; rankingFailed: boolean }
@@ -29,7 +29,9 @@ export async function findMatches(eventId: string): Promise<FindMatchesResult> {
   // RLS limits this to the signed-in owner.
   const { data: event } = await supabase
     .from("events")
-    .select("id, title, topic, goal, format, partner_criteria, city, owner_id")
+    .select(
+      "id, title, topic, goal, format, partner_criteria, city, owner_id, guest_count, date_start, date_end, dates_flexible, allowed_weekdays, needs_venue, required_amenities",
+    )
     .eq("id", eventId)
     .maybeSingle();
   if (!event) return { status: "error", message: "Event not found." };
@@ -51,27 +53,32 @@ export async function findMatches(eventId: string): Promise<FindMatchesResult> {
     return { status: "empty" };
   }
 
-  let rankings: Array<{ profileId: string; score: number; reasons: string[] }>;
+  let rankings: Ranking[] = [];
   let rankingFailed = false;
 
   try {
     rankings = dedupeRankings(await rank(event, candidates));
-    // If the model returned no valid rows, fall back rather than saving nothing.
     if (rankings.length === 0) throw new Error("model returned no valid rankings");
   } catch (err) {
     console.error("[findMatches rank]", err);
     rankingFailed = true;
-    rankings = candidates.map((p) => ({ profileId: p.id, score: 0, reasons: [] }));
   }
 
+  // Every candidate passed the hard filters, so none is dropped. One the model
+  // skipped is saved unranked (score null) and sorts last.
+  const byId = new Map(rankings.map((r) => [r.profileId, r]));
   const rankedAt = new Date().toISOString();
-  const rows = rankings.map((r) => ({
-    event_id: eventId,
-    profile_id: r.profileId,
-    score: Math.round(r.score * 10) / 10,
-    reasons: r.reasons,
-    ranked_at: rankedAt,
-  }));
+  const rows = candidates.map((candidate) => {
+    const r = byId.get(candidate.id);
+    return {
+      event_id: eventId,
+      profile_id: candidate.id,
+      score: r ? Math.round(r.score * 10) / 10 : null,
+      reasons: r?.reasons ?? [],
+      open_questions: [...candidate.open_questions, ...(r?.open_questions ?? [])],
+      ranked_at: rankedAt,
+    };
+  });
 
   const { error: upsertError } = await supabase
     .from("event_candidates")
@@ -92,5 +99,5 @@ export async function findMatches(eventId: string): Promise<FindMatchesResult> {
     return { status: "error", message: "Could not save matches. Please try again." };
   }
 
-  return { status: "ok", count: rankings.length, rankingFailed };
+  return { status: "ok", count: rows.length, rankingFailed };
 }

@@ -1,10 +1,12 @@
 import { z } from "zod";
+import { AMENITIES } from "@/lib/contracts";
 
 /**
  * The structured "event intent" the assistant proposes and the user confirms.
  * Shared by the `propose_event_intent` tool (input schema), the IntentCard
  * (client-side check before enabling Confirm) and `createEvent` (re-validation
- * before insert). Keep in sync with `supabase/migrations/0003_events.sql`.
+ * before insert). Keep in sync with `supabase/migrations/0003_events.sql` and
+ * `0005_event_matching.sql`.
  */
 
 const text = (min: number, max: number) => z.string().trim().min(min).max(max);
@@ -45,10 +47,32 @@ export const intentSchema = z
     partner_criteria: text(2, 1000).describe(
       "Requirements a sponsor or partner must meet",
     ),
+    needs_venue: z.boolean().describe("True if a partner must provide the venue"),
+    dates_flexible: z
+      .boolean()
+      .describe(
+        "False: date_start and date_end are the event itself. True: they are the earliest and latest possible dates",
+      ),
+    allowed_weekdays: z
+      .array(z.number().int().min(0).max(6))
+      .min(1)
+      .nullable()
+      .describe("Only when dates_flexible: possible days, 0 = Sunday ... 6 = Saturday. null = any day"),
+    required_amenities: z
+      .array(z.enum(AMENITIES))
+      .describe("Things the venue must have. [] = none"),
   })
   .refine((intent) => Date.parse(intent.date_end) >= Date.parse(intent.date_start), {
     message: "date_end must be on or after date_start",
     path: ["date_end"],
+  })
+  .refine((intent) => intent.dates_flexible || intent.allowed_weekdays === null, {
+    message: "allowed_weekdays is only for flexible dates; set it to null or set dates_flexible",
+    path: ["allowed_weekdays"],
+  })
+  .refine((intent) => intent.needs_venue || intent.required_amenities.length === 0, {
+    message: "required_amenities needs needs_venue to be true",
+    path: ["required_amenities"],
   });
 
 export type EventIntent = z.infer<typeof intentSchema>;
