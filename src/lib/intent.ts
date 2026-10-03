@@ -16,6 +16,15 @@ const isoDateTime = z
   .datetime({ offset: true })
   .describe("ISO 8601 date-time with UTC offset, e.g. 2026-11-14T19:00:00+01:00");
 
+function isTimeZone(value: string) {
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const intentSchema = z
   .object({
     title: text(3, 120).describe("Short public name of the event"),
@@ -23,6 +32,10 @@ export const intentSchema = z
     goal: text(2, 500).describe("What the host wants the event to achieve"),
     format: text(2, 80).describe("Event format, e.g. dinner, panel, workshop, mixer"),
     city: text(2, 120).describe("City where the event takes place"),
+    timezone: z
+      .string()
+      .refine(isTimeZone, "Use an IANA time zone, e.g. America/Los_Angeles")
+      .describe("IANA time zone of the event city, e.g. America/Los_Angeles"),
     date_start: isoDateTime,
     date_end: isoDateTime,
     guest_count: z

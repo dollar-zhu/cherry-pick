@@ -3,6 +3,9 @@
 -- AMENITIES in src/lib/contracts.ts and to the profiles.amenities check.
 
 alter table public.events
+  -- IANA zone of the event city. Matching needs it: timestamptz comes back in UTC,
+  -- so an SF Thursday evening would otherwise read as Friday.
+  add column if not exists timezone text not null default 'UTC',
   add column if not exists needs_venue boolean not null default false,
   -- false: date_start..date_end is the event. true: it is the window the event can move in.
   add column if not exists dates_flexible boolean not null default false,

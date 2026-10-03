@@ -9,6 +9,7 @@ export type ConstraintEvent = {
   guest_count: number;
   date_start: string;
   date_end: string;
+  timezone: string; // IANA zone of the event city; the DB returns timestamps in UTC
   // false: date_start..date_end is the event itself.
   // true: it is the window the event can move in, limited to allowed_weekdays.
   dates_flexible: boolean;
@@ -30,10 +31,10 @@ export type ConstraintProfile = {
 
 const DAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-/** Calendar date as written in the ISO string, before any UTC conversion. */
-export function calendarDate(value: string): string {
-  const match = /^(\d{4}-\d{2}-\d{2})/.exec(value);
-  return match ? match[1] : value.slice(0, 10);
+/** Calendar date (YYYY-MM-DD) of an instant in the event's time zone. */
+export function localDate(value: string, timezone: string): string {
+  // en-CA formats dates as YYYY-MM-DD.
+  return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(new Date(value));
 }
 
 function weekday(isoDate: string): number {
@@ -46,11 +47,10 @@ function addDays(isoDate: string, days: number): string {
   return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
 }
 
-/** Weekdays inside a date span. A span of a week or more covers every day. */
-export function spanWeekdays(dateStart: string, dateEnd: string): number[] {
-  const end = calendarDate(dateEnd);
+/** Weekdays inside a span of local dates. A span of a week or more covers every day. */
+export function spanWeekdays(start: string, end: string): number[] {
   const days = new Set<number>();
-  let cursor = calendarDate(dateStart);
+  let cursor = start;
   for (let i = 0; i < 7 && cursor <= end; i++) {
     days.add(weekday(cursor));
     cursor = addDays(cursor, 1);
@@ -85,9 +85,9 @@ export function exclusionReason(profile: ConstraintProfile, event: ConstraintEve
     return "Missing a required amenity";
   }
 
-  const start = calendarDate(event.date_start);
-  const end = calendarDate(event.date_end);
-  const eventDays = spanWeekdays(event.date_start, event.date_end);
+  const start = localDate(event.date_start, event.timezone);
+  const end = localDate(event.date_end, event.timezone);
+  const eventDays = spanWeekdays(start, end);
   const venueDays = profile.available_weekdays;
 
   if (event.dates_flexible) {

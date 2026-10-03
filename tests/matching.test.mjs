@@ -41,6 +41,7 @@ const demo = {
   guest_count: 50,
   date_start: "2026-10-05T18:00:00-07:00",
   date_end: "2026-12-20T21:00:00-08:00",
+  timezone: "America/Los_Angeles",
   dates_flexible: true,
   allowed_weekdays: null,
   needs_venue: true,
@@ -94,6 +95,19 @@ test("fixed dates: the venue must cover every day of the event", () => {
   assert.equal(exclusionReason(seed["Mission Loft"], thuToSat), "Unavailable on the event weekdays");
   const lateDecember = { ...thuToSat, date_start: "2026-12-31T18:00:00-08:00", date_end: "2027-01-02T21:00:00-08:00" };
   assert.equal(exclusionReason(seed["Nob Hill"], lateDecember), "Outside available dates");
+});
+
+test("UTC timestamps from the database still give the local weekday", () => {
+  // Thursday 2026-10-08 18:00 in SF is Friday 01:00 UTC.
+  const thursday = {
+    ...demo, dates_flexible: false,
+    date_start: "2026-10-09T01:00:00+00:00", date_end: "2026-10-09T04:00:00+00:00",
+  };
+  assert.equal(exclusionReason(seed["Marina Wellness"], thursday), null, "Thursdays only");
+  assert.equal(exclusionReason(seed["Dogpatch"], thursday), "Unavailable on the event weekdays", "Fridays only");
+  // Dec 31 evening in SF is already Jan 1 in UTC.
+  const newYearsEve = { ...thursday, date_start: "2027-01-01T03:00:00+00:00", date_end: "2027-01-01T05:00:00+00:00" };
+  assert.equal(exclusionReason({ ...seed["Nob Hill"], available_weekdays: [4] }, newYearsEve), null);
 });
 
 test("an empty weekday list is known to have none; null weekdays stay with a question", () => {

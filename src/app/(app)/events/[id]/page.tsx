@@ -6,8 +6,6 @@ import { createClient } from "@/lib/supabase/server";
 import { FindMatchesButton } from "./find-matches-button";
 import { MatchesTable, type MatchRow } from "@/components/events/matches-table";
 
-const dateFormat = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" });
-
 export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   const { id } = await params;
   if (!z.string().uuid().safeParse(id).success) notFound();
@@ -17,10 +15,16 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
   const supabase = await createClient();
   const { data: event } = await supabase
     .from("events")
-    .select("title, topic, goal, format, city, date_start, date_end, guest_count, budget_cap_cents, currency, dates_flexible, allowed_weekdays, needs_venue, required_amenities")
+    .select("title, topic, goal, format, city, timezone, date_start, date_end, guest_count, budget_cap_cents, currency, dates_flexible, allowed_weekdays, needs_venue, required_amenities")
     .eq("id", id)
     .maybeSingle();
   if (!event) notFound();
+  // Show the event in its own time zone, not the server's.
+  const dateFormat = new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: event.timezone,
+  });
 
   const { data: candidateRows, error: candidateError } = await supabase
     .from("event_candidates")

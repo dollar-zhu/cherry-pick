@@ -36,7 +36,7 @@ We use the brief to find partner companies, so correct facts matter more than sp
 Today is ${new Date().toISOString().slice(0, 10)}.
 
 Ask about these fields first. Matching depends on them:
-1. city
+1. city, and its IANA timezone (for example America/Los_Angeles). Fill in the timezone yourself from the city.
 2. guest_count
 3. when: date_start and date_end. Ask if the date is fixed or flexible.
    - Fixed (dates_flexible false): the dates are the event itself. allowed_weekdays is null.
