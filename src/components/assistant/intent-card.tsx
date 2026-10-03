@@ -4,8 +4,11 @@ import type { ToolCallMessagePartComponent } from "@assistant-ui/react";
 import { useState, useTransition } from "react";
 import { createEvent } from "@/lib/actions/events";
 import { formatBudget, intentSchema, type EventIntent } from "@/lib/intent";
+import { formatWeekdays } from "@/lib/matching-constraints";
 
-const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
+// Times in the event's own time zone, not the viewer's.
+const formatDate = (value: string, timeZone: string) =>
+  new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short", timeZone }).format(new Date(value));
 
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
@@ -25,8 +28,14 @@ function Details({ intent }: { intent: EventIntent }) {
       <Row label="Format">{intent.format}</Row>
       <Row label="City">{intent.city}</Row>
       <Row label="When">
-        {dateFormat.format(new Date(intent.date_start))} – {dateFormat.format(new Date(intent.date_end))}
+        {intent.dates_flexible && "Any time between "}
+        {formatDate(intent.date_start, intent.timezone)} – {formatDate(intent.date_end, intent.timezone)}
       </Row>
+      {intent.dates_flexible && <Row label="Weekdays">{intent.allowed_weekdays ? formatWeekdays(intent.allowed_weekdays) : "Any"}</Row>}
+      <Row label="Venue">{intent.needs_venue ? "A partner provides it" : "Not needed"}</Row>
+      {intent.needs_venue && (
+        <Row label="Must have">{intent.required_amenities.join(", ") || "Nothing specific"}</Row>
+      )}
       <Row label="Guests">{intent.guest_count}</Row>
       <Row label="Budget cap">{formatBudget(intent.budget_cap_cents, intent.currency)}</Row>
       <Row label="Sales boundary">{intent.sales_boundary}</Row>
