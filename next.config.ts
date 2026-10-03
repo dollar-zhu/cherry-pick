@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     // Keys are picomatch globs, so the dynamic segment's brackets are escaped.
     "/events/\\[id\\]": ["./assets/fonts/**/*"],
+    // The generate_flier MCP tool renders the same fliers.
+    "/api/mcp": ["./assets/fonts/**/*"],
   },
 };
 

@@ -62,6 +62,18 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
     .order("created_at", { ascending: false });
   if (inviteError) console.error("[event invites]", inviteError);
 
+  // Emails of approved co-hosts, so the host can reach them after approval.
+  const { data: contactRows, error: contactError } = await supabase.rpc("event_cohost_contacts", {
+    p_event_id: id,
+  });
+  if (contactError) console.error("[event contacts]", contactError);
+  const contactEmail = new Map(
+    (Array.isArray(contactRows) ? contactRows : []).map((row: { invite_id: string; email: string | null }) => [
+      row.invite_id,
+      row.email,
+    ]),
+  );
+
   const invites: InviteListRow[] = [];
   const awaitingDecision: ApprovalRow[] = [];
   const inviteStatus: Record<string, InviteStatus> = {};
@@ -74,6 +86,7 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
       isDemo: profile?.is_demo ?? false,
       status: row.status,
       note: (row.note as string | null) ?? null,
+      email: contactEmail.get(row.id as string) ?? null,
     };
     invites.push(invite);
     inviteStatus[row.profile_id as string] = row.status;

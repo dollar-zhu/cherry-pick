@@ -37,6 +37,18 @@ test("pending approval outranks match and invite progress", () => {
   assert.ok(response.nextActions.includes("http://localhost:3000/approvals/apr"));
 });
 
+test("approved co-hosts move the event to partners_confirmed and point at the flier", () => {
+  const response = deriveReadiness({
+    ...base,
+    candidateCount: 3,
+    invites: { ...emptyInviteCounts(), approved: 1, pending: 1, declined: 1 },
+  });
+  assert.equal(response.data.stage, "partners_confirmed");
+  assert.equal(response.data.blockers.length, 0);
+  assert.ok(response.nextActions.some((action) => /generate_flier/.test(action)));
+  assert.ok(response.nextActions.some((action) => /1 invite is still open/.test(action)));
+});
+
 test("accepted invites are a review stage when nothing is awaiting approval", () => {
   const response = deriveReadiness({
     ...base,
